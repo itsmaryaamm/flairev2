@@ -8,6 +8,7 @@ services:
   - type: web
     name: flaire-api
     runtime: python
+    plan: free
     rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
@@ -37,6 +38,7 @@ services:
   - type: web
     name: flaire-shotoku
     runtime: node
+    plan: free
     rootDir: backend/app/integrations/shotoku/service
     buildCommand: npm install
     startCommand: node server.mjs
