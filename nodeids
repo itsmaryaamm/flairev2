@@ -1,0 +1,14 @@
+[
+  "tests/test_flaire.py::test_audit_chain_intact",
+  "tests/test_flaire.py::test_bad_key_and_tampered_receipt",
+  "tests/test_flaire.py::test_category_not_allowed",
+  "tests/test_flaire.py::test_department_budget_enforced",
+  "tests/test_flaire.py::test_gift_card_blocked",
+  "tests/test_flaire.py::test_kill_switch",
+  "tests/test_flaire.py::test_needs_approval_then_approve",
+  "tests/test_flaire.py::test_paused_agent",
+  "tests/test_flaire.py::test_per_transaction_limit",
+  "tests/test_flaire.py::test_reject",
+  "tests/test_flaire.py::test_sar_500_purchase_end_to_end",
+  "tests/test_flaire.py::test_scripted_agent_run"
+]
