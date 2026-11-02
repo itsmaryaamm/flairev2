@@ -9,7 +9,7 @@ services:
     name: flaire-api
     runtime: python
     plan: free
-    rootDir: backend
+    rootDir: .
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /api/v1/health
@@ -39,7 +39,7 @@ services:
     name: flaire-shotoku
     runtime: node
     plan: free
-    rootDir: backend/app/integrations/shotoku/service
+    rootDir: app/integrations/shotoku/service
     buildCommand: npm install
     startCommand: node server.mjs
     envVars:
