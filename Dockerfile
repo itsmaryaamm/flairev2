@@ -1,8 +1,7 @@
-FROM node:22-slim
+FROM python:3.12-slim
 WORKDIR /app
-COPY package.json ./
-RUN npm install --omit=dev
-COPY server.mjs ./
-ENV DATA_DIR=/data
-EXPOSE 8788
-CMD ["node", "server.mjs"]
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+EXPOSE 8000
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
