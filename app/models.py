@@ -21,6 +21,13 @@ class Company(Base):
     kill_switch: Mapped[bool] = mapped_column(Boolean, default=False)
     kill_switch_reason: Mapped[str | None] = mapped_column(String(300), nullable=True)
     engine: Mapped[str] = mapped_column(String(20), default="native")  # native | shotoku
+    # Security controls (server-enforced, never by the AI)
+    require_password_on_approve: Mapped[bool] = mapped_column(Boolean, default=True)
+    two_person_threshold: Mapped[int] = mapped_column(Integer, default=250_000)  # halalas; approvals at/above need 2 different humans
+    kill_switch_frozen_cards: Mapped[list] = mapped_column(JSON, default=list)
+    # Finance policy: trusted suppliers pay without category checks (still within limits); unknown suppliers get a look first.
+    trusted_merchants: Mapped[list] = mapped_column(JSON, default=list)
+    new_merchant_review_from: Mapped[int] = mapped_column(Integer, default=20_000)  # halalas; 0 disables new-merchant review
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     users: Mapped[list[User]] = relationship(back_populates="company")
@@ -49,6 +56,7 @@ class Department(Base):
     monthly_budget: Mapped[int] = mapped_column(Integer, default=0)
     spent_this_period: Mapped[int] = mapped_column(Integer, default=0)
     period_start: Mapped[date] = mapped_column(Date, default=lambda: date.today().replace(day=1))
+    spending_paused: Mapped[bool] = mapped_column(Boolean, default=False)  # department-level kill switch
 
     company: Mapped[Company] = relationship(back_populates="departments")
     agents: Mapped[list[Agent]] = relationship(back_populates="department")
@@ -77,6 +85,7 @@ class Agent(Base):
     blocked_merchants: Mapped[list] = mapped_column(JSON, default=list)
     max_requests_per_hour: Mapped[int] = mapped_column(Integer, default=10)
     last_active_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    key_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)  # connector link expiry
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     company: Mapped[Company] = relationship(back_populates="agents")
@@ -171,3 +180,33 @@ class AuditEntry(Base):
     details: Mapped[dict] = mapped_column(JSON, default=dict)
     prev_hash: Mapped[str] = mapped_column(String(80))
     hash: Mapped[str] = mapped_column(String(80))
+
+
+class WebhookEvent(Base):
+    """Processed provider webhooks, keyed by the provider's event id so duplicate deliveries are ignored."""
+    __tablename__ = "webhook_events"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    provider: Mapped[str] = mapped_column(String(30), index=True)
+    event_id: Mapped[str] = mapped_column(String(120), index=True)
+    event_type: Mapped[str] = mapped_column(String(120))
+    payload: Mapped[dict] = mapped_column(JSON, default=dict)
+    received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class PushSubscription(Base):
+    """Browser/phone push subscription for a dashboard user (installed Flaire app)."""
+    __tablename__ = "push_subscriptions"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    endpoint: Mapped[str] = mapped_column(Text, unique=True)
+    p256dh: Mapped[str] = mapped_column(String(200))
+    auth: Mapped[str] = mapped_column(String(100))
+    user_agent: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class VapidKey(Base):
+    __tablename__ = "vapid_keys"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    private_pem: Mapped[str] = mapped_column(Text)
+    public_key: Mapped[str] = mapped_column(String(200))

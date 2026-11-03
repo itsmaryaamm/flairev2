@@ -13,18 +13,21 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from app.api.serializers import purchase_out
 from app.core.db import get_db
-from app.core.security import hash_api_key
+from app.core.security import resolve_agent_key
 from app.models import Agent, Company, Department, PurchaseRequest
 from app.services import submit_purchase_request
 
+import contextvars
+
 router = APIRouter()
 PROTOCOL_VERSION = "2025-06-18"
+CURRENT_IP: contextvars.ContextVar[str] = contextvars.ContextVar("flaire_mcp_ip", default="unknown")
 
 TOOLS = [
     {"name": "check_budget",
@@ -65,7 +68,10 @@ def _budget(db: Session, agent: Agent) -> dict:
             "per_transaction_limit_sar": agent.per_transaction_limit / 100, "monthly_limit_sar": agent.monthly_limit / 100,
             "spent_this_month_sar": agent.spent_this_period / 100, "needs_human_approval_at_or_above_sar": agent.approval_threshold / 100,
             "allowed_categories": agent.allowed_categories or "any", "blocked_merchants": agent.blocked_merchants,
-            "department": dept.name, "department_remaining_sar": dept.remaining / 100, "kill_switch_on": company.kill_switch}
+            "department": dept.name, "department_remaining_sar": dept.remaining / 100,
+            "trusted_suppliers": list(company.trusted_merchants or []), "new_supplier_review_from_sar": company.new_merchant_review_from / 100,
+            "policy": "Trusted suppliers pay within limits. The first payment to a new supplier at or above the review amount waits for a human. Never split purchases or relabel categories.",
+            "kill_switch_on": company.kill_switch}
 
 
 def _pr_view(pr: PurchaseRequest) -> dict:
@@ -87,7 +93,8 @@ def _call_tool(db: Session, agent: Agent, name: str, args: dict) -> dict:
             return _text({"error": "amount_sar must be greater than zero"}, True)
         company = db.get(Company, agent.company_id)
         pr = submit_purchase_request(db, company, agent, amount=amount, merchant=str(args.get("merchant") or "Unknown")[:200],
-                                     category=str(args.get("category") or "other")[:60], description=str(args.get("description") or "")[:2000], card_id=None)
+                                     category=str(args.get("category") or "other")[:60], description=str(args.get("description") or "")[:2000], card_id=None,
+                                     source="mcp", client_ip=CURRENT_IP.get())
         view = _pr_view(pr)
         view["what_to_do"] = {"completed": "Paid. You are done with this item.", "pending_approval": "Waiting for a human. Do not retry; tell the user it is pending.",
                               "denied": "Blocked. Read the reasons and pick a compliant alternative or report back.", "failed": "Approved but payment failed. Report the payment_error."}.get(pr.status, "")
@@ -111,7 +118,7 @@ def _handle(db: Session, agent: Agent, msg: dict) -> dict | None:
         return _rpc_result(id_, {"protocolVersion": params.get("protocolVersion") or PROTOCOL_VERSION, "capabilities": {"tools": {"listChanged": False}},
                                  "serverInfo": {"name": "flaire", "title": f"Flaire · {company.name}", "version": "0.2.0"},
                                  "instructions": f"You are '{agent.name}', an AI employee of {company.name}. Flaire is the company's finance department for AI employees. "
-                                                 "Always call check_budget before request_purchase. You cannot approve purchases or change limits; a human does that in the Flaire dashboard."})
+                                                 "Always call check_budget before request_purchase; it includes the company's trusted suppliers and policy. Prefer trusted suppliers, choose merchant and category yourself, never split a purchase or relabel a category to pass a check. If Flaire holds or denies a request, explain why and what the human can do. You cannot approve purchases or change limits; a human does that in the Flaire dashboard."})
     if method in ("notifications/initialized", "notifications/cancelled"):
         return None
     if method == "ping":
@@ -130,19 +137,25 @@ def _handle(db: Session, agent: Agent, msg: dict) -> dict | None:
     return _rpc_error(id_, -32601, f"Method not found: {method}")
 
 
-def _agent_from_key(db: Session, key: str) -> Agent | None:
-    return db.query(Agent).filter(Agent.api_key_hash == hash_api_key(key)).first()
+def _agent_from_key(db: Session, key: str, request: Request) -> tuple[Agent | None, str, int]:
+    """Returns (agent, error_message, http_status). Lockout, expiry and rate limits come from resolve_agent_key."""
+    try:
+        return resolve_agent_key(db, key, request), "", 200
+    except HTTPException as exc:
+        return None, str(exc.detail), exc.status_code
 
 
 @router.post("/mcp/{agent_key}", tags=["mcp"], include_in_schema=False)
 async def mcp_post(agent_key: str, request: Request, db: Session = Depends(get_db)):
-    agent = _agent_from_key(db, agent_key)
+    agent, err, code = _agent_from_key(db, agent_key, request)
     if not agent:
-        return JSONResponse(_rpc_error(None, -32001, "Unknown Flaire agent key"), status_code=401)
+        return JSONResponse(_rpc_error(None, -32001, err), status_code=code)
     try:
         body = await request.json()
     except Exception:
         return JSONResponse(_rpc_error(None, -32700, "Parse error"), status_code=400)
+    from app.core.guard import client_ip
+    CURRENT_IP.set(client_ip(request))
     messages = body if isinstance(body, list) else [body]
     responses = [r for r in (_handle(db, agent, m) for m in messages if isinstance(m, dict)) if r is not None]
     if not responses:
@@ -151,11 +164,11 @@ async def mcp_post(agent_key: str, request: Request, db: Session = Depends(get_d
 
 
 @router.get("/mcp/{agent_key}", tags=["mcp"], include_in_schema=False)
-async def mcp_get(agent_key: str, db: Session = Depends(get_db)):
+async def mcp_get(agent_key: str, request: Request, db: Session = Depends(get_db)):
     # Server-initiated streams are not used; clients that probe GET get a friendly answer.
-    agent = _agent_from_key(db, agent_key)
+    agent, err, code = _agent_from_key(db, agent_key, request)
     if not agent:
-        return JSONResponse({"detail": "Unknown Flaire agent key"}, status_code=401)
+        return JSONResponse({"detail": err}, status_code=code)
     company = db.get(Company, agent.company_id)
     return JSONResponse({"ok": True, "name": "flaire", "company": company.name, "agent": agent.name,
                          "message": "This link works. Add it in Claude: Settings, Connectors, Add custom connector."})

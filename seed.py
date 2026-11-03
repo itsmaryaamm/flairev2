@@ -27,13 +27,15 @@ def seed(reset: bool = False) -> dict:
             print("Demo data already present. Use --reset to start over.")
             return {}
 
-        company = Company(name="Nawah Tech", engine="native")
+        company = Company(name="Nawah Tech", engine="native", trusted_merchants=["Google Ads", "Meta Ads", "Canva", "Notion", "Slack", "AWS", "Aramex", "Jarir Bookstore"])
         db.add(company)
         db.flush()
         owner = User(company_id=company.id, email=DEMO_EMAIL, full_name="Sara Al-Otaibi", password_hash=hash_password(DEMO_PASSWORD), role="owner")
         db.add(owner)
         db.flush()
         audit.record(db, company.id, actor_type="user", actor_id=owner.id, actor_name=owner.full_name, event="company.created", details={"name": company.name})
+        # Second approver, needed for the two-person rule on large approvals.
+        db.add(User(company_id=company.id, email="finance@flaire.sa", full_name="Khalid Al-Harbi", password_hash=hash_password(DEMO_PASSWORD), role="finance"))
 
         depts = {}
         for name, budget in [("Marketing", 500_000), ("Procurement", 800_000), ("Operations", 300_000)]:
@@ -68,7 +70,7 @@ def seed(reset: bool = False) -> dict:
             audit.record(db, company.id, actor_type="user", actor_id=owner.id, actor_name=owner.full_name, event="card.added", details={"id": card.id, "label": label, "last4": last4})
 
         db.commit()
-        print(f"Seeded {company.name}. Login {DEMO_EMAIL} / {DEMO_PASSWORD}")
+        print(f"Seeded {company.name}. Login {DEMO_EMAIL} / {DEMO_PASSWORD}  (second approver: finance@flaire.sa / {DEMO_PASSWORD})")
         print("Agent API keys (shown once, also available via Rotate key in the dashboard):")
         for n, k in keys.items():
             print(f"  {n}: {k}")

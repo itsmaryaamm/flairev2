@@ -6,14 +6,14 @@ from app.schemas import AgentOut, ApprovedBy, DepartmentOut, PurchaseRequestOut,
 
 def department_out(d: Department) -> DepartmentOut:
     return DepartmentOut(id=d.id, name=d.name, monthly_budget=d.monthly_budget, spent_this_period=d.spent_this_period,
-                         remaining=d.remaining, period_start=d.period_start, agent_count=len(d.agents))
+                         remaining=d.remaining, period_start=d.period_start, spending_paused=d.spending_paused, agent_count=len(d.agents))
 
 
 def agent_out(a: Agent) -> AgentOut:
     return AgentOut(id=a.id, name=a.name, role=a.role, department_id=a.department_id, department_name=a.department.name if a.department else "",
                     status=a.status, per_transaction_limit=a.per_transaction_limit, monthly_limit=a.monthly_limit, spent_this_period=a.spent_this_period,
                     approval_threshold=a.approval_threshold, allowed_categories=list(a.allowed_categories or []), blocked_merchants=list(a.blocked_merchants or []),
-                    max_requests_per_hour=a.max_requests_per_hour, key_prefix=a.key_prefix, last_active_at=a.last_active_at, created_at=a.created_at)
+                    max_requests_per_hour=a.max_requests_per_hour, key_prefix=a.key_prefix, last_active_at=a.last_active_at, key_expires_at=a.key_expires_at, created_at=a.created_at)
 
 
 def purchase_out(pr: PurchaseRequest) -> PurchaseRequestOut:
@@ -21,6 +21,8 @@ def purchase_out(pr: PurchaseRequest) -> PurchaseRequestOut:
                               department_name=pr.department.name if pr.department else "", amount=pr.amount, currency=pr.currency, merchant=pr.merchant,
                               category=pr.category, description=pr.description or "", status=pr.status, decision=pr.decision or {}, transaction_id=pr.transaction_id,
                               approved_by=ApprovedBy(id=pr.approved_by.id, full_name=pr.approved_by.full_name) if pr.approved_by else None,
+                              approvals=[ApprovedBy(**a) for a in (pr.decision or {}).get("approvals", [])],
+                              needs_second_approver=bool((pr.decision or {}).get("needs_second_approver")),
                               approval_note=pr.approval_note, created_at=pr.created_at, decided_at=pr.decided_at)
 
 

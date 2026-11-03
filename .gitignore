@@ -1,0 +1,11 @@
+__pycache__/
+.venv/
+*.tsbuildinfo
+*.pyc
+.env
+*.db
+*.db-wal
+*.db-shm
+.pytest_cache/
+app/integrations/shotoku/service/node_modules/
+app/integrations/shotoku/service/data/

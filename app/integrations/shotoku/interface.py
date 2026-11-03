@@ -26,6 +26,7 @@ class AgentPolicy:
     blocked_merchants: list[str] = field(default_factory=list)
     max_requests_per_hour: int = 10
     requests_last_hour: int = 0
+    duplicate_recent: bool = False   # same merchant + amount from this agent in the last 10 minutes
 
 
 @dataclass
@@ -34,6 +35,7 @@ class DepartmentBudget:
     name: str
     monthly_budget: int
     spent_this_period: int
+    spending_paused: bool = False
 
     @property
     def remaining(self) -> int:
@@ -53,6 +55,9 @@ class AuthorizationRequest:
     department: DepartmentBudget
     kill_switch: bool
     company_blocked_categories: list[str] = field(default_factory=lambda: ["gift_card", "crypto", "cash_withdrawal"])
+    company_trusted_merchants: list[str] = field(default_factory=list)
+    merchant_is_new: bool = False            # company has never completed a payment to this merchant
+    new_merchant_review_from: int = 20_000   # halalas; 0 disables
 
 
 @dataclass

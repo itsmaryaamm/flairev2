@@ -48,6 +48,8 @@ class NativeEngine:
         # 1. Hard stops
         if req.kill_switch:
             return self._deny(req, "kill-switch", ["Company kill switch is ON. All new AI spending is disabled."])
+        if d.spending_paused:
+            return self._deny(req, "department-paused", [f"Spending for the {d.name} department is paused."])
         if a.status != "active":
             return self._deny(req, "agent-paused", [f"Agent '{a.agent_name}' is paused."])
         if req.amount <= 0:
@@ -63,9 +65,13 @@ class NativeEngine:
         for blocked in a.blocked_merchants:
             if _norm(blocked) in merchant_n:
                 return self._deny(req, "agent-blocked-merchant", reasons + [f"Merchant '{req.merchant}' is on this agent's blocklist."])
-        if a.allowed_categories and category_n not in {_norm(c) for c in a.allowed_categories}:
-            return self._deny(req, "category-not-allowed", reasons + [f"Category '{req.category}' is not in this agent's allowed categories ({', '.join(a.allowed_categories)})."])
-        reasons.append(f"Merchant '{req.merchant}' and category '{req.category}' allowed.")
+        trusted = any(_norm(t) and _norm(t) in merchant_n for t in req.company_trusted_merchants)
+        if trusted:
+            reasons.append(f"'{req.merchant}' is a trusted supplier. Category check skipped.")
+        else:
+            if a.allowed_categories and category_n not in {_norm(c) for c in a.allowed_categories}:
+                return self._deny(req, "category-not-allowed", reasons + [f"Category '{req.category}' is not in this agent's allowed categories ({', '.join(a.allowed_categories)})."])
+            reasons.append(f"Merchant '{req.merchant}' and category '{req.category}' allowed.")
 
         # 3. Limits and budgets (Shotoku: maxAmount / maxDailyAmount; Flaire: monthly + department)
         if req.amount > a.per_transaction_limit:
@@ -84,7 +90,19 @@ class NativeEngine:
         if a.requests_last_hour >= a.max_requests_per_hour:
             return self._deny(req, "velocity", reasons + [f"Agent hit its velocity limit ({a.max_requests_per_hour} requests/hour)."])
 
-        # 5. Human-in-the-loop threshold
+        # 5. Duplicate detection: same merchant and amount within 10 minutes looks like a loop or a replay. A human decides.
+        if a.duplicate_recent:
+            reasons.append(f"Possible duplicate: {sar(req.amount)} at {req.merchant} was already requested in the last 10 minutes. Human approval required.")
+            return Decision(verdict="pending_approval", reasons=reasons, engine=self.name, rule_id="duplicate-purchase",
+                            summary=f"Held for approval: looks like a duplicate of a recent request at {req.merchant}.", decision_id=f"dec_{req.request_id}")
+
+        # 6. New supplier review: the company has never paid this merchant and the amount is not trivial.
+        if not trusted and req.merchant_is_new and req.new_merchant_review_from and req.amount >= req.new_merchant_review_from:
+            reasons.append(f"'{req.merchant}' is a new supplier for the company and {sar(req.amount)} is at or above the new-supplier review amount ({sar(req.new_merchant_review_from)}). Human approval required.")
+            return Decision(verdict="pending_approval", reasons=reasons, engine=self.name, rule_id="new-merchant-review",
+                            summary=f"Held for approval: first payment to {req.merchant}.", decision_id=f"dec_{req.request_id}")
+
+        # 7. Human-in-the-loop threshold
         if req.amount >= a.approval_threshold:
             reasons.append(f"{sar(req.amount)} is at or above the approval threshold ({sar(a.approval_threshold)}). Human approval required.")
             return Decision(verdict="pending_approval", reasons=reasons, engine=self.name, rule_id="approval-threshold",
@@ -99,6 +117,8 @@ class NativeEngine:
         # Re-check hard stops and budgets at approval time; a human cannot lift a kill switch or a budget by approving.
         if req.kill_switch:
             return self._deny(req, "kill-switch", ["Kill switch is ON; approvals are frozen."])
+        if req.department.spending_paused:
+            return self._deny(req, "department-paused", [f"Spending for {req.department.name} is paused."])
         if req.amount > req.department.remaining:
             return self._deny(req, "department-budget", [f"Budget no longer covers this: {sar(req.department.remaining)} remaining."])
         return self._approve(req, "human-approved", [f"Approved by {approver}."])

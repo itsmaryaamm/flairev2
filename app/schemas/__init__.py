@@ -43,6 +43,10 @@ class CompanyOut(BaseModel):
     kill_switch: bool
     kill_switch_reason: str | None = None
     engine: str
+    require_password_on_approve: bool = True
+    two_person_threshold: int = 250_000
+    trusted_merchants: list[str] = []
+    new_merchant_review_from: int = 20_000
     created_at: UtcDatetime
     model_config = {"from_attributes": True}
 
@@ -57,6 +61,10 @@ class AuthOut(BaseModel):
 class CompanyPatch(BaseModel):
     name: str | None = None
     engine: str | None = None
+    require_password_on_approve: bool | None = None
+    two_person_threshold: int | None = Field(default=None, ge=0)
+    trusted_merchants: list[str] | None = None
+    new_merchant_review_from: int | None = Field(default=None, ge=0)
 
     @field_validator("engine")
     @classmethod
@@ -80,6 +88,7 @@ class DepartmentIn(BaseModel):
 class DepartmentPatch(BaseModel):
     name: str | None = None
     monthly_budget: int | None = Field(default=None, ge=0)
+    spending_paused: bool | None = None
 
 
 class DepartmentOut(BaseModel):
@@ -89,6 +98,7 @@ class DepartmentOut(BaseModel):
     spent_this_period: int
     remaining: int
     period_start: date
+    spending_paused: bool = False
     agent_count: int = 0
 
 
@@ -103,6 +113,7 @@ class AgentIn(BaseModel):
     allowed_categories: list[str] = []
     blocked_merchants: list[str] = []
     max_requests_per_hour: int = Field(default=10, ge=1, le=1000)
+    key_expires_in_days: int | None = Field(default=None, ge=1, le=365)
 
 
 class AgentPatch(BaseModel):
@@ -116,6 +127,7 @@ class AgentPatch(BaseModel):
     allowed_categories: list[str] | None = None
     blocked_merchants: list[str] | None = None
     max_requests_per_hour: int | None = Field(default=None, ge=1, le=1000)
+    key_expires_in_days: int | None = Field(default=None, ge=0, le=365)  # 0 clears expiry
 
 
 class AgentOut(BaseModel):
@@ -134,6 +146,7 @@ class AgentOut(BaseModel):
     max_requests_per_hour: int
     key_prefix: str
     last_active_at: UtcDatetime | None
+    key_expires_at: UtcDatetime | None = None
     created_at: UtcDatetime
 
 
@@ -189,6 +202,8 @@ class PurchaseRequestOut(BaseModel):
     decision: dict
     transaction_id: int | None
     approved_by: ApprovedBy | None
+    approvals: list[ApprovedBy] = []       # for the two-person rule
+    needs_second_approver: bool = False
     approval_note: str | None
     created_at: UtcDatetime
     decided_at: UtcDatetime | None
@@ -196,6 +211,7 @@ class PurchaseRequestOut(BaseModel):
 
 class ApprovalIn(BaseModel):
     note: str | None = None
+    password: str | None = None   # required when company.require_password_on_approve
 
 
 class TransactionOut(BaseModel):
