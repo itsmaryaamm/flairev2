@@ -27,7 +27,9 @@ services:
       - key: AUTH_ENGINE
         value: native
       - key: CORS_ORIGINS
-        value: https://flaire.vercel.app   # replace with your Vercel domain
+        value: https://flaire-nine.vercel.app
+      - key: DASHBOARD_URL
+        value: https://flaire-nine.vercel.app
       - key: ANTHROPIC_API_KEY
         sync: false
       - key: LITHIC_API_KEY
