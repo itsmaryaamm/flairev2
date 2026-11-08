@@ -118,11 +118,10 @@ export function Layout() {
       </span>
     ) : null
 
-  const tabClass = (isActive: boolean) => `relative flex flex-col items-center justify-center gap-0.5 text-[10px] font-semibold ${isActive ? 'text-brand' : 'text-neutral-500'}`
-
+  const immersive = location.pathname === '/' || location.pathname === '/activity'
   return (
     <div className="min-h-screen flex flex-col">
-      <div role="status" className="bg-[#F1E8FF] text-ink text-[13px] font-medium flex items-center justify-center gap-2.5 min-h-9 px-3 py-1 text-center">
+      <div role="status" className={`${immersive ? 'hidden md:flex' : 'flex'} bg-[#F1E8FF] text-ink text-[13px] font-medium items-center justify-center gap-2.5 min-h-9 px-3 py-1 text-center`}>
         <b className="rounded-[4px] bg-[#FBBF24] text-[#3B2A00] px-2 py-0.5 text-[11px]">Sandbox</b>
         <span className="md:hidden">No real money moves.</span><span className="hidden md:inline">Simulated payments only. No real money moves.</span>
       </div>
@@ -173,7 +172,7 @@ export function Layout() {
 
         <div className="flex-1 flex flex-col min-w-0">
           {/* Phone top bar */}
-          <header className="md:hidden sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-line px-4 h-14 flex items-center justify-between gap-2 pt-[env(safe-area-inset-top)]">
+          <header className={`${immersive ? 'hidden' : 'md:hidden'} sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-line px-4 h-14 flex items-center justify-between gap-2 pt-[env(safe-area-inset-top)]`}>
             <img src="/flaire-logo.png" alt="Flaire" className="h-6 w-auto shrink-0" />
             <div className="flex items-center gap-1">
               <NotificationsBell />
@@ -183,7 +182,7 @@ export function Layout() {
             </div>
           </header>
 
-          <main className="flex-1 w-full max-w-[1100px] mx-auto px-4 py-5 md:px-8 md:py-8 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-10">
+          <main className="flex-1 w-full max-w-[1100px] mx-auto px-4 py-5 md:px-8 md:py-8 pb-[calc(9rem+env(safe-area-inset-bottom))] md:pb-10">
             <Outlet />
           </main>
         </div>
@@ -191,20 +190,14 @@ export function Layout() {
 
       <AskFlaire />
       {/* Phone bottom tab bar */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur border-t border-line grid grid-cols-3 h-16 pb-[env(safe-area-inset-bottom)]">
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-line grid grid-cols-3 h-[68px] pb-[env(safe-area-inset-bottom)]">
         {phoneTabs.map((n) => (
-          <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => tabClass(isActive)}>
+          <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => `relative flex items-center justify-center text-[15px] font-semibold ${isActive ? 'text-brand' : 'text-neutral-600'}`}>
             {({ isActive }) => (
               <>
-                <span className={`inline-flex h-7 w-12 items-center justify-center rounded-pill ${isActive ? 'bg-brand-light' : ''}`}>
-                  <n.icon className="h-5 w-5" />
-                  {n.to === '/' && pendingCount > 0 && (
-                    <span className="absolute top-1.5 end-[calc(50%-22px)] h-4 min-w-[16px] rounded-pill bg-brand px-1 text-[10px] font-bold text-white flex items-center justify-center">
-                      {pendingCount}
-                    </span>
-                  )}
-                </span>
-                <span className="truncate max-w-full px-0.5">{t(n.key)}</span>
+                {isActive && <span className="absolute top-0 h-[3px] w-9 rounded-b-full bg-brand" />}
+                {t(n.key)}
+                {n.to === '/' && pendingCount > 0 && <span className="ms-1.5 h-2 w-2 rounded-full bg-brand" />}
               </>
             )}
           </NavLink>

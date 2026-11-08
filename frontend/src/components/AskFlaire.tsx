@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { MessageCircle, X } from 'lucide-react'
+import { ArrowUp, MessageCircle, X } from 'lucide-react'
 import { AssistantPanel } from './home/AssistantPanel'
 import { useT } from '../lib/i18n'
 
@@ -16,15 +16,26 @@ export function AskFlaire() {
   return (
     <>
       {!open && (
+        <>
         <button
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Ask Flaire"
-          className="fixed z-40 end-4 md:end-7 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] md:bottom-7 inline-flex items-center gap-2 h-11 md:h-12 px-4 rounded-full bg-ink text-white text-sm font-semibold shadow-[0_8px_24px_rgba(22,17,43,.28)] hover:bg-brand transition-colors"
+          className="md:hidden fixed z-40 inset-x-3 bottom-[calc(4.9rem+env(safe-area-inset-bottom))] h-14 ps-5 pe-2 rounded-full bg-white border border-line-strong flex items-center text-start shadow-[0_6px_20px_rgba(22,17,43,.08)]"
+        >
+          <span className="flex-1 text-neutral-500 text-[16px]">{t('phone.askAnything')}</span>
+          <span className="h-10 w-10 rounded-full bg-brand inline-flex items-center justify-center"><ArrowUp className="h-5 w-5 text-white" /></span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-label="Ask Flaire"
+          className="hidden md:inline-flex fixed z-40 end-7 bottom-7 items-center gap-2 h-12 px-4 rounded-full bg-ink text-white text-sm font-semibold shadow-[0_8px_24px_rgba(22,17,43,.28)] hover:bg-brand transition-colors"
         >
           <MessageCircle className="h-5 w-5" />
           Ask Flaire
         </button>
+        </>
       )}
       {open && (
         <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label="Ask Flaire">

@@ -12,6 +12,8 @@ import { PageLoader, Spinner } from '../components/Spinner'
 import { ErrorNote } from '../components/ErrorNote'
 import { ActivityRow } from '../components/activity/ActivityRow'
 import { FeesModal } from '../components/activity/FeesModal'
+import { useView } from '../lib/view'
+import { PhoneRows, SandboxBadge } from '../components/phone/Phone'
 
 type Chip = 'all' | 'paid' | 'waiting' | 'blocked'
 const CHIPS: { key: Chip; label: string }[] = [
@@ -36,6 +38,7 @@ function thisMonth(): string {
 /** One list of every purchase request, newest first. */
 export default function ActivityPage() {
   const toast = useToast()
+  const { phone } = useView()
   const t = useT()
   const [chip, setChip] = useState<Chip>('all')
   const [agentId, setAgentId] = useState('')
@@ -79,6 +82,55 @@ export default function ActivityPage() {
     } finally {
       setExporting(false)
     }
+  }
+
+
+  if (phone) {
+    const month = new Date().toLocaleString(undefined, { month: 'short' })
+    const total = list.filter((r) => r.status === 'completed' || r.status === 'approved').reduce((a, r) => a + r.amount, 0)
+    const groups: { day: string; items: PurchaseRequest[] }[] = []
+    for (const r of list) {
+      const day = new Date(r.created_at).toLocaleDateString(undefined, { day: '2-digit', month: 'short' })
+      const g = groups[groups.length - 1]
+      if (g && g.day === day) g.items.push(r)
+      else groups.push({ day, items: [r] })
+    }
+    return (
+      <div className="-mt-5">
+        <header className="flex items-center justify-between pt-[calc(1.25rem+env(safe-area-inset-top))]">
+          <h1 className="font-display text-[34px] leading-none font-bold tracking-tightest">{t('activity.title')}</h1>
+          <SandboxBadge />
+        </header>
+        <div className="mt-4 -mx-4 px-4 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
+          <button type="button" onClick={() => setAgentId('')} className={`shrink-0 h-10 px-4 rounded-full text-[15px] font-semibold ${agentId === '' ? 'bg-brand text-white' : 'bg-white border border-line text-ink'}`}>
+            {t('activity.all')}
+          </button>
+          {(agents.data ?? []).map((a) => (
+            <button key={a.id} type="button" onClick={() => setAgentId(String(a.id))} className={`shrink-0 h-10 px-4 rounded-full text-[15px] font-semibold ${agentId === String(a.id) ? 'bg-brand text-white' : 'bg-white border border-line text-ink'}`}>
+              {a.name}
+            </button>
+          ))}
+        </div>
+        <div className="mt-4 flex items-baseline justify-between">
+          <span className="text-[14px] text-neutral-500">{t('phone.sandboxAuthorized', { month })}</span>
+          <span className="font-display text-[26px] font-bold tracking-tightest tnum">{sar(total)}</span>
+        </div>
+        {reqs.loading && !reqs.data ? (
+          <PageLoader />
+        ) : reqs.error && !reqs.data ? (
+          <ErrorNote message={reqs.error} />
+        ) : list.length === 0 ? (
+          <div className="py-10 text-center text-sm text-neutral-500">{t('activity.emptyTitle')}</div>
+        ) : (
+          groups.map((g) => (
+            <section key={g.day} className="mt-4">
+              <div className="text-[13px] font-semibold text-neutral-500 mb-2">{g.day}</div>
+              <PhoneRows items={g.items} plain />
+            </section>
+          ))
+        )}
+      </div>
+    )
   }
 
   return (

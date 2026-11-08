@@ -4,6 +4,7 @@ import { api } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { useFetch } from '../lib/useFetch'
 import { useView } from '../lib/view'
+import { useT } from '../lib/i18n'
 import type { AdminView, DashboardSummary, FeeStatement, MyView, PurchaseRequest } from '../types'
 import { KillSwitchPill } from '../components/Layout'
 import { ErrorNote } from '../components/ErrorNote'
@@ -14,6 +15,7 @@ import { MonthCard } from '../components/home/MonthCard'
 import { RecentActivity } from '../components/home/RecentActivity'
 import { MyViewPanel } from '../components/home/MyViewPanel'
 import { AdminBlock } from '../components/home/AdminBlock'
+import { PhoneAllClear, PhoneGreeting, PhoneRecent, PhoneSpend } from '../components/phone/Phone'
 
 const REFRESH_MS = 30_000
 
@@ -29,6 +31,7 @@ function thisMonth(): string {
  */
 export default function HomePage() {
   const { company } = useAuth()
+  const t = useT()
   const { mode, phone } = useView()
   const admin = mode === 'admin'
   const [search, setSearch] = useSearchParams()
@@ -124,13 +127,22 @@ export default function HomePage() {
 
   if (phone) {
     return (
-      <div className="space-y-5">
-        {header}
+      <div className="space-y-4 -mt-5">
+        <PhoneGreeting />
         {error && <ErrorNote message={error} />}
-        {needsYou}
+        <NeedsYou
+          items={needsItems}
+          loading={needsLoading}
+          killSwitch={!!company?.kill_switch}
+          onDecided={onDecided}
+          decideId={decideId}
+          onDecideHandled={clearDecide}
+          title={t('phone.waiting')}
+          emptyView={<PhoneAllClear pending={0} />}
+        />
+        <PhoneSpend spent={totals?.spent_this_period ?? 0} budget={totals?.budget_total ?? 0} parts={(summary.data?.agents ?? []).map((a) => ({ id: a.id, name: a.name, spent: a.spent_this_period }))} />
+        <PhoneRecent items={recent} />
         <GetTheApp />
-        <MonthCard spent={totals?.spent_this_period ?? 0} budget={totals?.budget_total ?? 0} fees={fees.data} parts={(summary.data?.agents ?? []).map((a) => ({ name: a.name, spent: a.spent_this_period }))} />
-        <RecentActivity items={recent} />
       </div>
     )
   }

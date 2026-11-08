@@ -29,6 +29,8 @@ export function NeedsYou({
   title,
   decideId = null,
   onDecideHandled,
+  emptyView,
+  hideHeader = false,
 }: {
   items: NeedsYouItem[]
   loading: boolean
@@ -37,6 +39,8 @@ export function NeedsYou({
   title?: string
   decideId?: number | null
   onDecideHandled?: () => void
+  emptyView?: React.ReactNode
+  hideHeader?: boolean
 }) {
   const t = useT()
   const [picked, setPicked] = useState<{ req: PurchaseRequest; action: DecisionAction } | null>(null)
@@ -65,7 +69,7 @@ export function NeedsYou({
 
   return (
     <section>
-      <div className="flex items-center justify-between px-1 mb-2.5">
+      <div className={`flex items-center justify-between px-1 mb-2.5 ${hideHeader ? "hidden" : ""}`}>
         <h2 className="text-sm font-bold">{title ?? t('home.needsYou')}</h2>
         {items.length > 0 && (
           <span className="inline-flex min-w-[22px] h-[22px] items-center justify-center rounded-pill bg-brand px-1.5 text-[11px] font-bold text-white tnum">
@@ -74,7 +78,9 @@ export function NeedsYou({
         )}
       </div>
 
-      {items.length === 0 ? (
+      {items.length === 0 && emptyView ? (
+        emptyView
+      ) : items.length === 0 ? (
         <div className="card-lg p-6 text-center">
           <div className="mx-auto mb-2.5 h-11 w-11 rounded-full bg-success-tint text-success flex items-center justify-center">
             {loading ? <Spinner /> : <CheckCircle2 className="h-5 w-5" />}
