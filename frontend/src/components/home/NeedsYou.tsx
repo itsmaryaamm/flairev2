@@ -116,7 +116,7 @@ export function NeedsYou({
                   <button
                     type="button"
                     onClick={() => setPicked({ req: r, action: 'reject' })}
-                    className="h-11 rounded-pill border border-[#CDBBF0] bg-white text-ink text-sm font-bold inline-flex items-center justify-center gap-1.5 hover:bg-lavender"
+                    className="h-11 rounded-lg border border-[#CDBBF0] bg-white text-ink text-sm font-bold inline-flex items-center justify-center gap-1.5 hover:bg-lavender"
                   >
                     <X className="h-4 w-4" /> {t('common.decline')}
                   </button>
@@ -124,7 +124,7 @@ export function NeedsYou({
                     type="button"
                     onClick={() => setPicked({ req: r, action: 'approve' })}
                     disabled={killSwitch}
-                    className="h-11 rounded-pill bg-brand text-white text-sm font-bold inline-flex items-center justify-center gap-1.5 hover:bg-brand-dark shadow-primary disabled:opacity-50"
+                    className="h-11 rounded-lg bg-brand text-white text-sm font-semibold inline-flex items-center justify-center gap-1.5 hover:bg-brand-dark disabled:opacity-50"
                   >
                     <Check className="h-4 w-4" /> {t('common.approve')}
                   </button>

@@ -9,7 +9,7 @@ export default {
         mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       colors: {
-        canvas: '#FFFFFF',
+        canvas: '#F7F6FA',
         ink: '#16112B',
         line: {
           DEFAULT: '#E3DFEE',
@@ -78,14 +78,14 @@ export default {
         },
       },
       borderRadius: {
-        card: '14px',
-        'card-lg': '18px',
+        card: '10px',
+        'card-lg': '12px',
         input: '10px',
         pill: '999px',
       },
       boxShadow: {
         primary: '0 12px 28px -14px rgba(123,47,242,.8)',
-        card: '0 1px 0 rgba(22,17,43,.03), 0 18px 40px -28px rgba(22,17,43,.22)',
+        card: 'none',
       },
       letterSpacing: {
         tightest: '-0.035em',

@@ -5,13 +5,13 @@ import { moneyLocale } from '../lib/money'
 export type PillTone = 'green' | 'amber' | 'red' | 'neutral' | 'blue' | 'mint' | 'lavender'
 
 const toneClasses: Record<PillTone, string> = {
-  green: 'bg-success-tint text-success',
-  mint: 'bg-success-tint text-success',
-  amber: 'bg-warn-tint text-warn',
-  red: 'bg-danger-tint text-danger',
-  lavender: 'bg-brand-light text-brand',
-  neutral: 'bg-lavender-deep text-neutral-600',
-  blue: 'bg-brand-light text-brand-deep',
+  green: 'text-[#0F7A55] [--d:#12A36F]',
+  mint: 'text-[#0F7A55] [--d:#12A36F]',
+  amber: 'text-[#9A4A06] [--d:#E08A1E]',
+  red: 'text-[#B3202A] [--d:#E0313A]',
+  lavender: 'text-brand-dark [--d:#7B2FF2]',
+  neutral: 'text-neutral-600 [--d:#A49CB8]',
+  blue: 'text-brand-dark [--d:#7B2FF2]',
 }
 
 /** Maps any status string from the API onto a visual tone. */
@@ -78,7 +78,7 @@ export function StatusPill({
   tone,
   children,
   className = '',
-  dot = false,
+  dot = true,
 }: {
   status?: string | null
   tone?: PillTone
@@ -89,9 +89,9 @@ export function StatusPill({
   const t = tone ?? toneFor(status)
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-pill px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap ${toneClasses[t]} ${className}`}
+      className={`inline-flex items-center gap-1.5 text-[13px] font-medium whitespace-nowrap ${toneClasses[t]} ${className}`}
     >
-      {dot && <span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />}
+      {dot && <span className="h-1.5 w-1.5 rounded-full bg-[var(--d)]" />}
       {children ?? labelFor(status)}
     </span>
   )

@@ -20,7 +20,7 @@ export function MonthCard({ spent, budget, fees, parts = [] }: { spent: number; 
     <section className="card-lg p-5">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-bold">{t('home.thisMonth')}</h2>
-        <span className="stamp bg-[#FBDDB0] text-[#6B3A00]">Simulated</span>
+        <span className="text-xs text-neutral-500">Simulated</span>
       </div>
       <div className="mt-4 flex items-center gap-5">
         <div className="relative h-[132px] w-[132px] shrink-0">
@@ -35,13 +35,14 @@ export function MonthCard({ spent, budget, fees, parts = [] }: { spent: number; 
               })}
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <div className="font-display text-xl font-bold tracking-tightest tnum">{sar(spent, { compact: true })}</div>
-            <div className="text-[11px] text-neutral-500">spent</div>
+            <div className="font-display text-2xl font-semibold tracking-tightest tnum">{budget > 0 ? Math.round((spent / budget) * 100) : 0}%</div>
+            <div className="text-[11px] text-neutral-500">of budget</div>
           </div>
         </div>
         <div className="min-w-0 flex-1">
-          <div className="font-display text-2xl font-bold tracking-tightest tnum">{sar(remaining, { compact: true })}</div>
-          <div className="text-xs text-neutral-500">{t('home.leftOf', { amount: sar(budget, { compact: true }) })}</div>
+          <div className="text-xs text-neutral-500">{sar(spent)} spent</div>
+          <div className="font-display text-[26px] leading-tight font-semibold tracking-tightest tnum">{sar(remaining)}</div>
+          <div className="text-xs text-neutral-500">{t('home.leftOf', { amount: sar(budget) })}</div>
           <ul className="mt-3 space-y-1.5">
             {used.slice(0, 4).map((p, i) => (
               <li key={p.name} className="flex items-center gap-2 text-xs">

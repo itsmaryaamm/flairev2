@@ -30,14 +30,15 @@ export function sar(halalas: number | null | undefined, opts?: { compact?: boole
   if (currentLocale === 'ar') {
     const n = compact
       ? arabicNumber(value, { notation: 'compact', maximumFractionDigits: 1 })
-      : arabicNumber(value, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      : arabicNumber(value, { minimumFractionDigits: Math.abs(value % 1) < 0.005 ? 0 : 2, maximumFractionDigits: 2 })
     return `${n} ${AR_SUFFIX}`
   }
   if (compact) {
     return `SAR ${new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(value)}`
   }
+  const whole = Math.abs(value % 1) < 0.005
   return `SAR ${new Intl.NumberFormat('en-US', {
-    minimumFractionDigits: 2,
+    minimumFractionDigits: whole ? 0 : 2,
     maximumFractionDigits: 2,
   }).format(value)}`
 }

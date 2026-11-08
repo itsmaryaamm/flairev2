@@ -129,7 +129,7 @@ export function Layout() {
       <KillSwitchBanner />
       <div className="flex flex-1">
         {/* Desktop sidebar */}
-        <aside className="hidden md:flex md:flex-col w-[200px] shrink-0 border-e border-line bg-white sticky top-0 h-screen">
+        <aside className="hidden md:flex md:flex-col w-[216px] shrink-0 border-e border-line bg-white sticky top-0 h-screen">
           <div className="px-5 pt-6 pb-4">
             <img src="/flaire-logo.png" alt="Flaire" className="h-7 w-auto" />
           </div>
@@ -140,8 +140,8 @@ export function Layout() {
                 to={n.to}
                 end={n.end}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-input px-3 py-2.5 text-sm font-semibold transition-colors ${
-                    isActive ? 'bg-brand-light text-brand' : 'text-neutral-600 hover:bg-lavender hover:text-ink'
+                  `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                    isActive ? 'bg-[#EFECF6] text-ink' : 'text-neutral-600 hover:bg-[#F3F1F8] hover:text-ink'
                   }`
                 }
               >

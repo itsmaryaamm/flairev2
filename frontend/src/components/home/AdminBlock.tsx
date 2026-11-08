@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom'
-import { AlertTriangle, Building2, Users } from 'lucide-react'
 import { useT } from '../../lib/i18n'
 import { sar } from '../../lib/money'
 import { chainStatus } from '../../lib/chain'
@@ -9,9 +8,9 @@ import { StatusPill } from '../StatusPill'
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-card border border-line bg-lavender px-3 py-2.5">
-      <div className="text-[11px] text-neutral-500">{label}</div>
-      <div className="text-lg font-extrabold tracking-tightest tnum">{value}</div>
+    <div>
+      <div className="text-xs text-neutral-500">{label}</div>
+      <div className="font-display text-xl font-semibold tracking-tightest tnum">{value}</div>
     </div>
   )
 }
@@ -28,7 +27,7 @@ export function AdminBlock({ view }: { view: AdminView }) {
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <Stat label={t('admin.pending')} value={view.pending_total} />
         <Stat label={t('admin.pendingAmount')} value={sar(view.pending_amount, { compact: true })} />
         <Stat label={t('admin.members')} value={`${view.members.active} / ${view.members.count}`} />
@@ -37,8 +36,7 @@ export function AdminBlock({ view }: { view: AdminView }) {
 
       <div>
         <div className="flex items-center gap-2 mb-1.5">
-          <Building2 className="h-4 w-4 text-brand" />
-          <h3 className="text-sm font-bold">{t('admin.pendingByDepartment')}</h3>
+          <h3 className="text-sm font-semibold">{t('admin.pendingByDepartment')}</h3>
         </div>
         {view.pending_by_department.length === 0 ? (
           <p className="text-xs text-neutral-500">{t('admin.nothingPending')}</p>
@@ -57,7 +55,6 @@ export function AdminBlock({ view }: { view: AdminView }) {
 
       <div className="pt-3 border-t border-line">
         <div className="flex items-center gap-2 mb-1.5">
-          <Users className="h-4 w-4 text-brand" />
           <h3 className="text-sm font-bold">{t('admin.approvers')}</h3>
           <span className="text-xs text-neutral-500">
             {t('admin.rulesAndDelegations', { rules: view.approval_rules, delegations: view.active_delegations })}
@@ -83,7 +80,6 @@ export function AdminBlock({ view }: { view: AdminView }) {
 
       <div className="pt-3 border-t border-line">
         <div className="flex items-center gap-2 mb-1.5">
-          <AlertTriangle className={`h-4 w-4 ${view.stuck_holds.length ? 'text-warn' : 'text-neutral-400'}`} />
           <h3 className="text-sm font-bold">{t('admin.stuckHolds')}</h3>
         </div>
         {view.stuck_holds.length === 0 ? (
