@@ -163,10 +163,11 @@ def test_mcp_connector(ctx):
     assert init["result"]["serverInfo"]["name"] == "flaire"
     assert client.post(url, json={"jsonrpc": "2.0", "method": "notifications/initialized"}).status_code == 202
     tools = client.post(url, json={"jsonrpc": "2.0", "id": 2, "method": "tools/list"}).json()["result"]["tools"]
-    assert {t["name"] for t in tools} == {"check_budget", "request_purchase", "get_purchase_status", "list_my_requests", "search", "fetch"}
+    assert {t["name"] for t in tools} == {"check_budget", "request_purchase", "get_purchase_status", "list_my_requests", "search", "fetch", "get_agent_context", "get_usage_guide"}
     r = client.post(url, json={"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "request_purchase", "arguments": {"amount_sar": 5, "merchant": "Google Ads", "category": "advertising", "description": "mcp"}}}).json()
     body = _json.loads(r["result"]["content"][0]["text"])
-    assert body["status"] == "completed" and r["result"]["isError"] is False
+    assert body["status"] == "simulated_authorization" and body["internal_status"] == "completed" and body["simulated"] is True and r["result"]["isError"] is False
+    assert "paid" not in body["message"].lower()
     assert client.post("/api/v1/mcp/flk_nope", json={"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}).status_code == 401
     assert "approve" not in " ".join(t["name"] for t in tools)
 
@@ -364,11 +365,26 @@ def test_oauth_connector_sign_in_flow(ctx):
     challenge = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).decode().rstrip("=")
     q = {"response_type": "code", "client_id": cid, "redirect_uri": reg["redirect_uris"][0], "state": "xyz", "code_challenge": challenge, "code_challenge_method": "S256", "scope": "purchases"}
     page = client.get("/api/v1/oauth/authorize", params=q)
-    assert page.status_code == 200 and "Connect your Claude" in page.text
-    bad = client.post("/api/v1/oauth/authorize", data={**q, "email": "owner@test.sa", "password": "nope", "agent": "__new__"})
+    assert page.status_code == 200 and "Connect Flaire to Claude" in page.text
+    bad = client.post("/api/v1/oauth/authorize", data={**q, "email": "owner@test.sa", "password": "nope"})
     assert bad.status_code == 200 and "Wrong email" in bad.text
-    ok = client.post("/api/v1/oauth/authorize", data={**q, "email": "owner@test.sa", "password": "password123", "agent": "__new__"}, follow_redirects=False)
-    assert ok.status_code == 302
+    # step 1 signs in and shows the choose page; nothing is created yet, even if an old client sends agent=__new__
+    before = len(client.get("/api/v1/agents", headers=H).json())
+    step1 = client.post("/api/v1/oauth/authorize", data={**q, "email": "owner@test.sa", "password": "password123", "agent": "__new__"}, follow_redirects=False)
+    assert step1.status_code == 200 and "Which AI employee" in step1.text and "Sandbox" in step1.text
+    assert len(client.get("/api/v1/agents", headers=H).json()) == before
+    ticket = re.search(r'name="ticket" value="([^"]+)"', step1.text).group(1)
+    # confirming without a choice, or with a forged ticket, does not connect
+    none = client.post("/api/v1/oauth/authorize", data={**q, "stage": "confirm", "ticket": ticket}, follow_redirects=False)
+    assert none.status_code == 200 and "Choose an AI employee" in none.text
+    forged = client.post("/api/v1/oauth/authorize", data={**q, "stage": "confirm", "ticket": ticket[:-3] + "abc", "choice": "__new__", "new_name": "X"}, follow_redirects=False)
+    assert forged.status_code == 200 and "expired" in forged.text and len(client.get("/api/v1/agents", headers=H).json()) == before
+    noname = client.post("/api/v1/oauth/authorize", data={**q, "stage": "confirm", "ticket": ticket, "choice": "__new__", "new_name": " "}, follow_redirects=False)
+    assert "Give the new AI employee a name" in noname.text
+    ok = client.post("/api/v1/oauth/authorize", data={**q, "stage": "confirm", "ticket": ticket, "choice": "__new__", "new_name": "My Claude"}, follow_redirects=False)
+    assert ok.status_code == 200 and "Connected" in ok.text and "Sandbox, simulated" in ok.text
+    ok_url = re.search(r'http-equiv="refresh" content="4;url=([^"]+)"', ok.text).group(1).replace("&amp;", "&")
+    ok.headers = {"location": ok_url}
     loc = urlparse(ok.headers["location"]); qs = parse_qs(loc.query)
     assert loc.netloc == "claude.ai" and qs["state"] == ["xyz"]
     code = qs["code"][0]
@@ -383,7 +399,7 @@ def test_oauth_connector_sign_in_flow(ctx):
     assert "My Claude" in init["result"]["instructions"]
     import json as _json
     res = client.post("/api/v1/mcp", json={"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name": "request_purchase", "arguments": {"amount_sar": 50, "merchant": "Google Ads", "category": "advertising", "description": "oauth test"}}}, headers=B).json()
-    assert _json.loads(res["result"]["content"][0]["text"])["status"] == "completed"
+    assert _json.loads(res["result"]["content"][0]["text"])["status"] == "simulated_authorization"
     # 6. visible in the dashboard, revocable, then dead
     conns = client.get("/api/v1/connections", headers=H).json()
     assert len(conns) == 1 and conns[0]["agent_name"] == "My Claude"
@@ -513,26 +529,42 @@ def test_asa_realtime_authorization_and_fees(ctx):
     agent = db.get(Agent, ctx["agent"]["id"]); card = db.get(Card, agent.card_id)
     # pretend this employee's card is a Lithic card with a token
     card.provider = "lithic"; card.provider_token = "card_tok_123"; db.commit(); db.close()
-    import itertools
+    import itertools, json as _j, base64, hashlib, hmac, time
+    from app.core.crypto import encrypt
+    from app.models import Company
+    secret = "whsec_" + base64.b64encode(b"k" * 24).decode()
     seq = itertools.count()
-    asa = lambda amount, status="AUTHORIZATION": client.post("/api/v1/webhooks/lithic/asa", json={"token": f"tx_{next(seq)}", "status": status, "card": {"token": "card_tok_123"},
-                                                                                                 "amounts": {"merchant": {"amount": amount}}, "merchant": {"descriptor": "GOOGLE ADS"}}).json()
+
+    def raw_post(body: dict, sign=True, key=b"k" * 24):
+        raw = _j.dumps(body).encode(); h = {"content-type": "application/json"}
+        if sign:
+            mid, ts = str(body["token"]), str(int(time.time()))
+            sig = base64.b64encode(hmac.new(key, f"{mid}.{ts}.".encode() + raw, hashlib.sha256).digest()).decode()
+            h.update({"webhook-id": mid, "webhook-timestamp": ts, "webhook-signature": "v1," + sig})
+        return client.post("/api/v1/webhooks/lithic/asa", content=raw, headers=h).json()["result"]
+    mk = lambda token, amount: {"token": token, "status": "AUTHORIZATION", "card": {"token": "card_tok_123"}, "amounts": {"merchant": {"amount": amount}}, "merchant": {"descriptor": "GOOGLE ADS"}}
+    # fail closed: no stored signing secret, so nothing can be verified and everything is declined
+    assert raw_post(mk("nosecret_1", 12_300)) == "SUSPECTED_FRAUD"
+    db = SessionLocal(); db.get(Company, agent.company_id).lithic_asa_secret_enc = encrypt(secret); db.commit(); db.close()
+    assert raw_post(mk("unsigned_1", 12_300), sign=False) == "SUSPECTED_FRAUD"          # unsigned
+    assert raw_post(mk("badsig_1", 12_300), key=b"x" * 24) == "SUSPECTED_FRAUD"           # wrong key
+    asa = lambda amount, status="AUTHORIZATION": raw_post({**mk(f"tx_{next(seq)}", amount), "status": status})
     # nothing approved yet → declined
-    assert asa(12_300)["result"] == "UNAUTHORIZED_MERCHANT"
+    assert asa(12_300) == "UNAUTHORIZED_MERCHANT"
     # Flaire approves a purchase (the mock adapter can't settle a 'lithic' card, so the request ends 'failed' at payment, but the approval stands)
     db = SessionLocal(); card = db.get(Card, agent.card_id); card.provider = "mock_snb"; db.commit(); db.close()
     pr = buy(ctx, 12_300, merchant="Google Ads")
     assert pr["status"] == "completed"
     db = SessionLocal(); card = db.get(Card, agent.card_id); card.provider = "lithic"; db.commit(); db.close()
     # now the exact amount is approved for this card, once
-    assert asa(12_300)["result"] == "APPROVED"
-    assert asa(12_300)["result"] == "UNAUTHORIZED_MERCHANT"   # the approval cannot be reused
-    first_tok = client.post("/api/v1/webhooks/lithic/asa", json={"token": "replay_1", "status": "AUTHORIZATION", "card": {"token": "card_tok_123"}, "amounts": {"merchant": {"amount": 5}}}).json()["result"]
-    assert client.post("/api/v1/webhooks/lithic/asa", json={"token": "replay_1", "status": "AUTHORIZATION", "card": {"token": "card_tok_123"}, "amounts": {"merchant": {"amount": 5}}}).json()["result"] == first_tok  # idempotent
-    assert asa(99_999_999)["result"] == "INSUFFICIENT_FUNDS"
+    assert asa(12_300) == "APPROVED"
+    assert asa(12_300) == "UNAUTHORIZED_MERCHANT"   # the approval cannot be reused
+    first_tok = raw_post(mk("replay_1", 5))
+    assert raw_post(mk("replay_1", 5)) == first_tok  # idempotent
+    assert asa(99_999_999) == "INSUFFICIENT_FUNDS"
     # paused employee → CARD_PAUSED
     client.patch(f"/api/v1/agents/{agent.id}", json={"status": "paused"}, headers=H)
-    assert asa(100)["result"] == "CARD_PAUSED"
+    assert asa(100) == "CARD_PAUSED"
     client.patch(f"/api/v1/agents/{agent.id}", json={"status": "active"}, headers=H)
     db = SessionLocal(); card = db.get(Card, agent.card_id); card.provider = "mock_snb"; db.commit(); db.close()
     # fee statement: 0.15% of settled volume

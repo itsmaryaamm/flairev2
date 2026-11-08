@@ -40,9 +40,9 @@ How you work:
 - Call check_budget early and read it: your limits, the department's remaining budget, trusted suppliers, and the company's rules.
 - Call list_my_requests before buying anything that might already be paid for. Never buy the same thing twice.
 - Prefer trusted suppliers. Pick real vendor names and realistic amounts in SAR. Buy only what the task needs.
-- Use request_purchase for every payment. Flaire decides: paid means proceed; pending_approval means a human will review it, say so and continue with what does not depend on it; denied means read the reason and propose a compliant alternative or stop.
+- Use request_purchase for every payment. Flaire decides: authorized (simulated, no real money moves) means proceed; pending_approval means a human will review it, say so and continue with what does not depend on it; denied means read the reason and propose a compliant alternative or stop.
 - Never split a purchase to dodge a limit, never relabel a category, never try gift cards, crypto or cash.
-- Be concise. Plain language, no corporate filler. End with a short status: paid, waiting, blocked.
+- Be concise. Plain language, no corporate filler. End with a short status: authorized (simulated), waiting, blocked.
 Money is in Saudi Riyals. Today is {today}."""
 
 EMPLOYEE_TOOLS = [
@@ -85,7 +85,7 @@ def employee_tool(db: Session, company: Company, agent: Agent, name: str, args: 
                                      description=str(args.get("description", ""))[:2000], card_id=None, source="chat")
         created.append(pr.id)
         v = request_view(pr)
-        v["what_to_do"] = {"completed": "Paid. Proceed.", "pending_approval": "A human must approve. Do not retry.", "denied": "Blocked. Read reasons.", "failed": "Approved but payment failed."}.get(pr.status, "")
+        v["what_to_do"] = {"completed": "Simulated authorization (sandbox, no real money moved). Proceed.", "pending_approval": "A human must approve. Do not retry.", "denied": "Blocked. Read reasons.", "failed": "Approved but the simulated payment failed."}.get(pr.status, "")
         return v
     return {"error": f"unknown tool {name}"}
 
@@ -296,7 +296,7 @@ def _scripted_employee(db: Session, company: Company, agent: Agent, message: str
         txs = _month_transactions(db, agent)
         out.append({"role": "tool", "name": "list_my_requests", "input": {"limit": 10}, "output": {"requests": [request_view(p) for p in mine.order_by(PurchaseRequest.id.desc()).limit(10).all()]}})
         if not txs:
-            out.append(_say("I have not paid for anything this month yet."))
+            out.append(_say("Nothing has been authorized this month yet."))
             return out
         total = sum(t.amount for t in txs)
         lines = "; ".join(f"{t.merchant} {_sar(t.amount)} on {t.created_at.date()}" for t in txs[:8])
@@ -333,7 +333,7 @@ def _scripted_employee(db: Session, company: Company, agent: Agent, message: str
         if not target:
             return [_say("I have not made any requests yet.")]
         out.append({"role": "tool", "name": "get_purchase_status", "input": {"request_id": target.id}, "output": request_view(target)})
-        label = {"completed": "paid", "pending_approval": "waiting for a human", "denied": "denied", "rejected": "rejected by a human", "failed": "approved but the payment failed", "approved": "approved, payment in progress"}.get(target.status, target.status)
+        label = {"completed": "authorized in the sandbox (simulated)", "pending_approval": "waiting for a human", "denied": "denied", "rejected": "rejected by a human", "failed": "approved but the payment failed", "approved": "approved, payment in progress"}.get(target.status, target.status)
         extra = f" Reason: {_reason_text(target)}" if target.status != "completed" else ""
         out.append(_say(f"My last request, #{target.id}: {_sar(target.amount)} at {target.merchant}, is {label}.{extra}"))
         return out
@@ -367,14 +367,14 @@ def _purchase_flow(db: Session, company: Company, agent: Agent, draft: dict, tex
     recent = db.query(PurchaseRequest).filter(PurchaseRequest.agent_id == agent.id, PurchaseRequest.merchant == merchant, PurchaseRequest.status == "completed",
                                                PurchaseRequest.created_at >= datetime.now(timezone.utc) - timedelta(days=30)).first()
     if recent and not draft.get("force") and "again" not in low:
-        out.append(_say(f"We already paid {merchant} {_sar(recent.amount)} on {recent.created_at.date()} (request #{recent.id}). I will not buy it twice. Say \"buy again\" if this is a separate purchase."))
+        out.append(_say(f"We already bought from {merchant} {_sar(recent.amount)} on {recent.created_at.date()} (request #{recent.id}). I will not buy it twice. Say \"buy again\" if this is a separate purchase."))
         return out
     res = employee_tool(db, company, agent, "request_purchase", {"amount_sar": amount, "merchant": merchant, "category": category, "description": (draft.get("description") or text)[:200]}, created)
     out.append({"role": "tool", "name": "request_purchase", "input": {"amount_sar": amount, "merchant": merchant, "category": category}, "output": res})
     status = res.get("status")
     money = _sar(int(round(amount * 100)))
     if status == "completed":
-        out.append(_say(f"Done: {money} paid to {merchant} (request #{res['request_id']}). Status: paid."))
+        out.append(_say(f"Done: {money} authorized for {merchant} in the sandbox (request #{res['request_id']}). Simulated, no real money moved."))
     elif status == "pending_approval":
         out.append(_say(f"Submitted {money} for {merchant} (request #{res['request_id']}). Flaire held it for a human: {(res.get('reasons') or ['needs approval'])[-1]} I will carry on with everything that does not depend on it. Status: waiting."))
     else:

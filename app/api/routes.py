@@ -708,14 +708,15 @@ def connector_info(request: Request, user: User = Depends(get_current_user)):
     from app.api.mcp import AGENT_INSTRUCTIONS
     from app.api.oauth import base_url
     mcp_url = f"{base_url(request)}/api/v1/mcp"
-    claude_steps = ["Open Claude, go to Settings, Connectors, then Add custom connector.",
-                    f"Name it Flaire and paste this URL: {mcp_url}. Leave authentication on Sign in.",
-                    "Click Add, sign in with your Flaire email and password, and choose which AI employee this Claude is.",
-                    "In a Claude project, paste the agent instructions below into the project instructions so it spends through Flaire without asking."]
-    chatgpt_steps = ["Open ChatGPT, go to Settings, Connectors (or Apps), then Create or Add a custom connector (Developer mode).",
-                     f"Name it Flaire and paste this MCP server URL: {mcp_url}. Authentication: OAuth. Sign in with your Flaire account and pick the AI employee.",
-                     "The connector exposes search and fetch plus the Flaire tools, so ChatGPT accepts it for chat and for custom GPTs.",
-                     "In a custom GPT or project, paste the agent instructions below into the instructions field."]
+    claude_steps = ["Open Claude, go to Settings, then Connectors, then Add custom connector.",
+                    f"Name it Flaire and paste this address: {mcp_url}",
+                    "Click Add, then Connect. Sign in with your Flaire email and password.",
+                    "Choose which AI employee this Claude is, check its sandbox budget, and confirm.",
+                    "Start a new chat and ask for something that costs money, like finding a tool and buying a subscription. Claude may ask you to allow Flaire the first time."]
+    chatgpt_steps = ["Open ChatGPT, then Settings, then Apps and Connectors, and turn on Developer mode.",
+                     f"Create a new connector named Flaire. Paste this address: {mcp_url}. Choose OAuth for authentication.",
+                     "Sign in with your Flaire email and password, choose which AI employee this ChatGPT is, check its sandbox budget, and confirm.",
+                     "In a new chat, add Flaire from the tools menu, then ask for something that costs money. ChatGPT asks you to confirm each action that is not read only."]
     return {"mcp_url": mcp_url, "agent_instructions": AGENT_INSTRUCTIONS, "claude_steps": claude_steps, "chatgpt_steps": chatgpt_steps,
             # kept for the current dashboard
             "url": mcp_url, "auth": "Sign in now", "steps": claude_steps}

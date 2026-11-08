@@ -269,7 +269,7 @@ def test_chat_purchase_asks_one_question_then_completes(ctx):
     assert r["purchase_requests"] == [] and "Which vendor" in _last(r) and "how much" not in _last(r).lower()
     r2 = _chat(ctx, "TikTok", run_id=r["run_id"])
     assert len(r2["purchase_requests"]) == 1 and r2["purchase_requests"][0]["merchant"] == "TikTok Ads" and r2["purchase_requests"][0]["amount"] == 15_000
-    assert r2["purchase_requests"][0]["status"] == "completed" and "paid" in _last(r2)
+    assert r2["purchase_requests"][0]["status"] == "completed" and "authorized" in _last(r2)
     # vendor known, amount missing: one question about the amount only
     r = _chat(ctx, "buy a Canva subscription again")
     assert r["purchase_requests"] == [] and "How much" in _last(r) and "Canva" in _last(r)
@@ -299,7 +299,7 @@ def test_mcp_search_fetch_and_connector_info(ctx):
     key = ctx["A"]["X-Agent-Key"]
     url = f"/api/v1/mcp/{key}"
     init = client.post(url, json={"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "t", "version": "1"}}}).json()
-    assert "do not ask the user whether to use Flaire" in init["result"]["instructions"]
+    assert "SANDBOX" in init["result"]["instructions"] and "check_budget" in init["result"]["instructions"] and len(init["result"]["instructions"]) < 900
     tools = {t["name"]: t for t in client.post(url, json={"jsonrpc": "2.0", "id": 2, "method": "tools/list"}).json()["result"]["tools"]}
     assert {"search", "fetch"} <= set(tools) and tools["search"]["inputSchema"]["required"] == ["query"] and tools["fetch"]["inputSchema"]["required"] == ["id"]
     import json
@@ -314,7 +314,7 @@ def test_mcp_search_fetch_and_connector_info(ctx):
     empty = json.loads(client.post(url, json={"jsonrpc": "2.0", "id": 6, "method": "tools/call", "params": {"name": "search", "arguments": {"query": "zzz-nothing"}}}).json()["result"]["content"][0]["text"])
     assert empty == {"results": []}
     info = client.get("/api/v1/connector-info", headers=ctx["H"]).json()
-    assert info["mcp_url"].endswith("/api/v1/mcp") and "request_purchase immediately" in info["agent_instructions"]
+    assert info["mcp_url"].endswith("/api/v1/mcp") and "not proof of payment" in info["agent_instructions"]
     assert isinstance(info["claude_steps"], list) and isinstance(info["chatgpt_steps"], list) and info["claude_steps"] and info["chatgpt_steps"]
     # connected step recognises the MCP call
     assert client.get("/api/v1/onboarding/status", headers=ctx["H"]).json()["steps"]["connected"] is True
@@ -342,7 +342,7 @@ def test_notification_feed(ctx):
     client.post(f"/api/v1/approvals/{held['id']}/approve", json={"password": PW}, headers=FIN)
     feed = client.get("/api/v1/notifications", headers=FIN).json()
     dec = next(n for n in feed if n["type"] == "decision" and n["request_id"] == held["id"])
-    assert dec["title"].startswith("Paid") and "Fin" in dec["body"]
+    assert dec["title"].startswith("Authorized (simulated)") and "Fin" in dec["body"]
     # kill switch events reach owners, admins and finance
     client.post("/api/v1/company/kill-switch", json={"enabled": True, "reason": "drill"}, headers=H)
     client.post("/api/v1/company/kill-switch", json={"enabled": False}, headers=H)

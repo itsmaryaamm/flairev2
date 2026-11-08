@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import hmac
 import html
 import json
 import secrets
@@ -24,7 +25,6 @@ import time
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode, urlparse
 
-import httpx
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from sqlalchemy.orm import Session
@@ -32,6 +32,7 @@ from sqlalchemy.orm import Session
 from app.core import audit
 from app.core.config import get_settings
 from app.core.db import get_db
+from app.core import safe_http
 from app.core.security import generate_agent_key, hash_api_key, verify_password
 from app.models import Agent, Company, Department, OAuthClient, OAuthCode, OAuthToken, User, utcnow
 
@@ -41,7 +42,9 @@ settings = get_settings()
 
 TOKEN_TTL_DAYS = 90
 CODE_TTL_SECONDS = 600
-CLAUDE_REDIRECT_HOSTS = ("claude.ai", "claude.com", "anthropic.com", "localhost", "127.0.0.1")
+# Used only when a client's metadata document cannot be fetched: exact callback URLs of the hosts we know.
+KNOWN_CALLBACKS = ("https://claude.ai/api/mcp/auth_callback", "https://claude.com/api/mcp/auth_callback",
+                   "https://chatgpt.com/connector_platform_oauth_redirect", "https://platform.openai.com/apps-manage/oauth")
 
 
 def base_url(request: Request) -> str:
@@ -86,7 +89,9 @@ def prm(request: Request):
 
 # ---------------------------------------------------------------- client registration
 @router.post("/oauth/register", status_code=201, tags=["oauth"], include_in_schema=False)
-def register_client(body: dict, db: Session = Depends(get_db)):
+def register_client(request: Request, body: dict, db: Session = Depends(get_db)):
+    from app.core import guard
+    guard.check_rate(f"oauth-register:{guard.client_ip(request)}", limit=30, window=3600)
     redirect_uris = body.get("redirect_uris") or []
     if not redirect_uris or not all(isinstance(u, str) and u.startswith(("https://", "http://localhost", "http://127.0.0.1")) for u in redirect_uris):
         raise HTTPException(400, "redirect_uris must be https URLs")
@@ -103,62 +108,120 @@ def _allowed_redirect(db: Session, client_id: str, redirect_uri: str) -> bool:
     if client:
         return redirect_uri in (client.redirect_uris or [])
     if client_id.startswith("https://"):
-        # Client ID Metadata Document: fetch the document and trust its redirect_uris
+        # Client ID Metadata Document: fetched safely (public addresses only), and it must describe itself.
         try:
-            r = httpx.get(client_id, timeout=5, headers={"Accept": "application/json"})
-            if r.status_code == 200:
-                uris = r.json().get("redirect_uris") or []
-                if redirect_uri in uris:
-                    return True
+            doc = safe_http.fetch_json(client_id)
+            if doc.get("client_id") == client_id and redirect_uri in (doc.get("redirect_uris") or []):
+                return True
         except Exception:
             pass
-        host = urlparse(redirect_uri).hostname or ""
-        return redirect_uri.startswith("https://") and any(host == h or host.endswith("." + h) for h in CLAUDE_REDIRECT_HOSTS)
+        return redirect_uri in KNOWN_CALLBACKS
     return False
 
 
-# ---------------------------------------------------------------- authorize (sign-in page)
-PAGE = """<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Connect to Flaire</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-<style>
-:root{{--v:#7B2FF2;--ink:#1A0B33;--mut:#8A80A0;--line:#E8E3F0;--bg:#FBFAFD;--lav:#F1E8FD}}
-*{{box-sizing:border-box}}body{{margin:0;font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--ink);display:flex;min-height:100vh;align-items:center;justify-content:center;padding:16px}}
-.card{{background:#fff;border:1px solid var(--line);border-radius:20px;padding:28px;width:100%;max-width:440px}}
-h1{{font-size:24px;letter-spacing:-.03em;margin:0 0 4px}}p{{color:var(--mut);margin:0 0 20px;font-size:14px}}
-label{{display:block;font-size:13px;font-weight:600;margin:14px 0 6px}}input,select{{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font:inherit;font-size:15px;background:#fff}}
-button{{margin-top:22px;width:100%;padding:13px;border:0;border-radius:999px;background:var(--v);color:#fff;font:inherit;font-weight:700;font-size:15px;box-shadow:0 12px 28px -14px rgba(123,47,242,.8);cursor:pointer}}
-.err{{background:#FDE6E6;color:#B3141C;border-radius:10px;padding:10px 12px;font-size:13px;margin-top:14px}}
-.who{{background:var(--lav);border-radius:12px;padding:12px 14px;font-size:13px;margin-bottom:6px}}
-.logo{{font-weight:800;font-size:20px;letter-spacing:-.03em;color:var(--v);margin-bottom:18px}}
-.small{{font-size:12px;color:var(--mut);margin-top:10px}}
-</style></head><body><form class="card" method="post">
-<div class="logo">Flaire</div>
-<h1>Connect your Claude</h1>
-<p>Sign in to your Flaire company. Your Claude becomes one of its AI employees: it can request purchases, and only you can approve them.</p>
-<div class="who"><strong>{client}</strong> is asking to connect.</div>
-{error}
-<label>Email</label><input name="email" type="email" required autocomplete="email" value="{email}">
-<label>Password</label><input name="password" type="password" required autocomplete="current-password">
-<p class="small"><a href="{forgot}" style="color:var(--v)">Forgot password?</a></p>
-<label>Authentication code <span style="font-weight:400;color:var(--mut)">(only if you use 2FA)</span></label><input name="code" inputmode="numeric" autocomplete="one-time-code" placeholder="123 456">
-<label>This Claude will act as</label>
-<select name="agent"><option value="__new__">A new AI employee named "My Claude"</option>{agents}</select>
-<p class="small">Pick an existing AI employee to reuse its limits, or create a new one (default limits: SAR 1,000 per purchase, SAR 5,000 per month, human approval above SAR 500). You can change everything in the dashboard.</p>
-<input type="hidden" name="client_id" value="{client_id}"><input type="hidden" name="redirect_uri" value="{redirect_uri}"><input type="hidden" name="state" value="{state}">
-<input type="hidden" name="code_challenge" value="{code_challenge}"><input type="hidden" name="code_challenge_method" value="{ccm}"><input type="hidden" name="scope" value="{scope}"><input type="hidden" name="resource" value="{resource}">
-<button type="submit">Sign in and connect</button>
-</form></body></html>"""
+# ---------------------------------------------------------------- sign-in ticket (carries the signed-in person to the choose step)
+def _sign(payload: dict) -> str:
+    raw = base64.urlsafe_b64encode(json.dumps(payload, separators=(",", ":")).encode()).decode().rstrip("=")
+    sig = hmac.new(get_settings().jwt_secret.encode(), raw.encode(), hashlib.sha256).hexdigest()
+    return f"{raw}.{sig}"
 
 
-def _render(client_name: str, params: dict, error: str = "", email: str = "", agents: list[Agent] | None = None) -> HTMLResponse:
+def _unsign(ticket: str) -> dict | None:
+    try:
+        raw, sig = ticket.rsplit(".", 1)
+        good = hmac.new(get_settings().jwt_secret.encode(), raw.encode(), hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(sig, good):
+            return None
+        data = json.loads(base64.urlsafe_b64decode(raw + "=" * (-len(raw) % 4)))
+        return data if data.get("exp", 0) > time.time() else None
+    except Exception:
+        return None
+
+
+# ---------------------------------------------------------------- authorize: sign in, choose the AI employee, confirm
+STYLE = """<style>
+:root{--v:#7B2FF2;--ink:#16112B;--body:#443E5C;--mut:#6A6384;--line:#E3DFEE;--bg:#F7F6FA;--lav:#F1E8FF}
+*{box-sizing:border-box}body{margin:0;font-family:'Instrument Sans',system-ui,sans-serif;background:var(--bg);color:var(--ink);display:flex;min-height:100vh;align-items:center;justify-content:center;padding:16px;-webkit-font-smoothing:antialiased}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:28px;width:100%;max-width:460px}
+h1{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:26px;line-height:1.1;letter-spacing:-.035em;margin:0 0 6px}p{color:var(--body);margin:0 0 18px;font-size:14px;line-height:1.5}
+label.f{display:block;font-size:13px;font-weight:600;margin:14px 0 6px}input[type=text],input[type=email],input[type=password]{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font:inherit;font-size:15px;background:#fff}
+button{margin-top:20px;width:100%;padding:14px;border:0;border-radius:10px;background:var(--v);color:#fff;font:inherit;font-weight:600;font-size:15px;cursor:pointer}
+.err{background:#FDE6E6;color:#B3202A;border-radius:10px;padding:10px 12px;font-size:13px;margin:14px 0 0}
+.logo{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:22px;letter-spacing:-.04em;color:var(--v)}
+.sb{font:600 11px 'Instrument Sans',sans-serif;background:#FBBF24;color:#3B2A00;border-radius:4px;padding:3px 8px;letter-spacing:0}
+.small{font-size:12px;color:var(--mut);margin-top:10px}.who{background:var(--lav);border-radius:10px;padding:11px 14px;font-size:13px;margin-bottom:6px}
+.opt{display:block;border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:10px;cursor:pointer}.opt:has(input:checked){border:2px solid var(--v);background:#FAF6FF;padding:13px}
+.opt input{margin-right:8px}.opt b{font-size:15px}.opt .m{display:block;color:var(--body);font-size:13px;margin:6px 0 0 24px;line-height:1.5}
+.row{display:flex;justify-content:space-between;font-size:14px;padding:9px 0;border-bottom:1px solid var(--line)}.row:last-child{border:0}
+.note{background:var(--lav);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--ink);margin-top:16px;line-height:1.5}
+a.btn{display:block;text-align:center;margin-top:20px;padding:14px;border-radius:10px;background:var(--v);color:#fff;text-decoration:none;font-weight:600}
+</style>"""
+HEAD = ('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Connect Flaire</title>'
+        '<link rel="icon" href="https://flaire-nine.vercel.app/favicon-32.png">'
+        '<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">'
+        + STYLE + '</head><body>')
+LOGO = '<div class="logo">Flaire<span class="sb">Sandbox</span></div>'
+
+
+def _hidden(params: dict) -> str:
+    keys = ("client_id", "redirect_uri", "state", "code_challenge", "code_challenge_method", "scope", "resource")
+    return "".join(f'<input type="hidden" name="{k}" value="{html.escape(str(params.get(k, "")))}">' for k in keys)
+
+
+def _render(client_name: str, params: dict, error: str = "", email: str = "") -> HTMLResponse:
+    """Step 1: sign in."""
     forgot = f"{get_settings().dashboard_url.rstrip('/')}/forgot"
-    opts = "".join(f'<option value="{a.id}">{html.escape(a.name)} ({html.escape(a.department.name if a.department else "")})</option>' for a in (agents or []))
-    return HTMLResponse(PAGE.format(client=html.escape(client_name), error=f'<div class="err">{html.escape(error)}</div>' if error else "", email=html.escape(email),
-                                    agents=opts, client_id=html.escape(params.get("client_id", "")), redirect_uri=html.escape(params.get("redirect_uri", "")),
-                                    state=html.escape(params.get("state", "")), code_challenge=html.escape(params.get("code_challenge", "")),
-                                    ccm=html.escape(params.get("code_challenge_method", "S256")), scope=html.escape(params.get("scope", "purchases")),
-                                    resource=html.escape(params.get("resource", "")), forgot=html.escape(forgot)))
+    err = f'<div class="err">{html.escape(error)}</div>' if error else ""
+    return HTMLResponse(HEAD + f"""<form class="card" method="post">{LOGO}
+<h1>Connect Flaire to {html.escape(client_name)}</h1>
+<p>Sign in to your Flaire company. Next you choose which AI employee this is and see what it can do. Nothing is created until you confirm.</p>
+{err}
+<label class="f">Email</label><input name="email" type="email" required autocomplete="email" value="{html.escape(email)}">
+<label class="f">Password</label><input name="password" type="password" required autocomplete="current-password">
+<p class="small"><a href="{html.escape(forgot)}" style="color:#7B2FF2">Forgot password?</a></p>
+<label class="f">Authentication code <span style="font-weight:400;color:#6A6384">(only if you use 2FA)</span></label><input name="code" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="123 456">
+<input type="hidden" name="stage" value="signin">{_hidden(params)}
+<button type="submit">Sign in</button></form></body></html>""")
+
+
+def _sar(halalas: int) -> str:
+    v = (halalas or 0) / 100
+    return f"SAR {v:,.0f}" if v == int(v) else f"SAR {v:,.2f}"
+
+
+def _render_choose(client_name: str, params: dict, ticket: str, agents: list[Agent], error: str = "") -> HTMLResponse:
+    """Step 2: choose the AI employee, see its sandbox permissions, confirm."""
+    err = f'<div class="err">{html.escape(error)}</div>' if error else ""
+    opts = ""
+    for a in agents:
+        dept = a.department.name if a.department else ""
+        opts += (f'<label class="opt"><input type="radio" name="choice" value="{a.id}" required><b>{html.escape(a.name)}</b> <span style="color:#6A6384;font-size:13px">{html.escape(dept)}</span>'
+                 f'<span class="m">Up to {_sar(a.monthly_limit)} a month, {_sar(a.per_transaction_limit)} per purchase.<br>A person approves anything from {_sar(a.approval_threshold)}.<br>Spent this month: {_sar(a.spent_this_period)}.</span></label>')
+    opts += ('<label class="opt"><input type="radio" name="choice" value="__new__" required><b>Create a new AI employee</b>'
+             '<span class="m">Sandbox limits: up to SAR 5,000 a month, SAR 1,000 per purchase. A person approves anything from SAR 500. You can change all of this in the dashboard.'
+             '<br><input type="text" name="new_name" maxlength="60" placeholder="Name, for example Marketing AI" style="margin-top:8px"></span></label>')
+    return HTMLResponse(HEAD + f"""<form class="card" method="post">{LOGO}
+<h1>Which AI employee is this {html.escape(client_name)}?</h1>
+<p>It will be able to ask Flaire to authorize purchases within the limits below. It can never approve its own requests or change limits.</p>
+{err}{opts}
+<div class="note"><b>Sandbox.</b> Every purchase is simulated. No real money moves.</div>
+<input type="hidden" name="stage" value="confirm"><input type="hidden" name="ticket" value="{html.escape(ticket)}">{_hidden(params)}
+<button type="submit">Confirm and connect</button></form></body></html>""")
+
+
+def _render_done(agent: Agent, company: Company, target: str) -> HTMLResponse:
+    """Step 3: the read-only check, then back to the app."""
+    t = html.escape(target)
+    return HTMLResponse(HEAD.replace("</head>", f'<meta http-equiv="refresh" content="4;url={t}"></head>') + f"""<div class="card">{LOGO}
+<h1>Connected</h1>
+<p>{html.escape(company.name)} now has this AI employee. Here is what Flaire sees:</p>
+<div class="row"><span>Connected as</span><b>{html.escape(agent.name)}</b></div>
+<div class="row"><span>Monthly sandbox budget</span><b>{_sar(agent.monthly_limit)}</b></div>
+<div class="row"><span>Per purchase</span><b>{_sar(agent.per_transaction_limit)}</b></div>
+<div class="row"><span>Needs your approval from</span><b>{_sar(agent.approval_threshold)}</b></div>
+<div class="row"><span>Mode</span><b>Sandbox, simulated</b></div>
+<div class="note">Ask your AI for something that costs money, like finding a tool and buying a subscription. It may ask your permission to use Flaire the first time.</div>
+<a class="btn" href="{t}">Return to the app</a></div></body></html>""")
 
 
 def _client_name(db: Session, client_id: str) -> str:
@@ -166,8 +229,8 @@ def _client_name(db: Session, client_id: str) -> str:
     if c:
         return c.client_name
     if client_id.startswith("https://"):
-        return urlparse(client_id).hostname or "An MCP client"
-    return "An MCP client"
+        return urlparse(client_id).hostname or "your AI"
+    return "your AI"
 
 
 @router.get("/oauth/authorize", response_class=HTMLResponse, tags=["oauth"], include_in_schema=False)
@@ -177,68 +240,95 @@ def authorize_page(request: Request, db: Session = Depends(get_db)):
         raise HTTPException(400, "response_type=code, client_id, redirect_uri and code_challenge (PKCE) are required")
     if q.get("code_challenge_method", "S256") != "S256":
         raise HTTPException(400, "Only S256 PKCE is supported")
+    from app.core import guard
+    guard.check_rate(f"oauth-page:{guard.client_ip(request)}", limit=60, window=900)
     if not _allowed_redirect(db, q["client_id"], q["redirect_uri"]):
         raise HTTPException(400, "redirect_uri is not registered for this client")
     return _render(_client_name(db, q["client_id"]), q)
 
 
+def _active_agents(db: Session, company_id: int) -> list[Agent]:
+    return db.query(Agent).filter(Agent.company_id == company_id, Agent.status == "active", Agent.api_key_hash != "revoked").order_by(Agent.id).all()
+
+
 @router.post("/oauth/authorize", tags=["oauth"], include_in_schema=False)
-def authorize_submit(request: Request, db: Session = Depends(get_db), email: str = Form(...), password: str = Form(...), code: str = Form(""), agent: str = Form("__new__"),
+def authorize_submit(request: Request, db: Session = Depends(get_db), stage: str = Form("signin"), email: str = Form(""), password: str = Form(""), code: str = Form(""),
+                     ticket: str = Form(""), choice: str = Form(""), new_name: str = Form(""),
                      client_id: str = Form(...), redirect_uri: str = Form(...), state: str = Form(""), code_challenge: str = Form(...),
                      code_challenge_method: str = Form("S256"), scope: str = Form("purchases"), resource: str = Form("")):
     params = {"client_id": client_id, "redirect_uri": redirect_uri, "state": state, "code_challenge": code_challenge, "code_challenge_method": code_challenge_method, "scope": scope, "resource": resource}
+    if code_challenge_method != "S256":
+        raise HTTPException(400, "Only S256 PKCE is supported")
     if not _allowed_redirect(db, client_id, redirect_uri):
         raise HTTPException(400, "redirect_uri is not registered for this client")
     from app.core import guard
     guard.check_rate(f"oauth:{guard.client_ip(request)}", limit=15, window=900)
-    user = db.query(User).filter(User.email == email.lower().strip()).first()
-    from app.core import supabase as sb
-    if sb.enabled():
-        sb_user = sb.password_grant(email.lower().strip(), password)
-        if not sb_user:
-            return _render(_client_name(db, client_id), params, "Wrong email or password.", email)
-        if not user:
-            user = User(company_id=None, email=email.lower().strip(), full_name=(sb_user.get("user_metadata") or {}).get("full_name") or email.split("@")[0], password_hash="", supabase_uid=sb_user["id"], role="owner")
-            db.add(user); db.flush()
-        elif not user.supabase_uid:
-            user.supabase_uid = sb_user["id"]
-        if user.company_id is None:
-            return _render(_client_name(db, client_id), params, "Finish setting up your company in the Flaire dashboard first, then connect.", email)
-    elif not user or not verify_password(password, user.password_hash):
-        return _render(_client_name(db, client_id), params, "Wrong email or password.", email)
-    from app.api.auth_extra import totp_ok
-    if user.totp_enabled and not totp_ok(user, code):
-        return _render(_client_name(db, client_id), params, "Enter the 6-digit code from your authenticator app.", email)
-    if user.role not in ("owner", "finance"):
-        return _render(_client_name(db, client_id), params, "Only owners and finance users can connect an AI employee.", email)
-    company = db.get(Company, user.company_id)
-    agents = db.query(Agent).filter(Agent.company_id == company.id, Agent.status == "active", Agent.api_key_hash != "revoked").order_by(Agent.id).all()
+    cname = _client_name(db, client_id)
 
-    if agent == "__new__":
+    # ---- step 1: password (and 2FA), then show the choose page. Never creates anything.
+    if stage != "confirm":
+        user = db.query(User).filter(User.email == email.lower().strip()).first()
+        from app.core import supabase as sb
+        if sb.enabled():
+            sb_user = sb.password_grant(email.lower().strip(), password)
+            if not sb_user:
+                return _render(cname, params, "Wrong email or password.", email)
+            if not user:
+                user = User(company_id=None, email=email.lower().strip(), full_name=(sb_user.get("user_metadata") or {}).get("full_name") or email.split("@")[0], password_hash="", supabase_uid=sb_user["id"], role="owner")
+                db.add(user); db.flush()
+            elif not user.supabase_uid:
+                user.supabase_uid = sb_user["id"]
+            if user.company_id is None:
+                return _render(cname, params, "Finish setting up your company in the Flaire dashboard first, then connect.", email)
+        elif not user or not verify_password(password, user.password_hash):
+            return _render(cname, params, "Wrong email or password.", email)
+        from app.api.auth_extra import totp_ok
+        if user.totp_enabled and not totp_ok(user, code):
+            return _render(cname, params, "Enter the 6-digit code from your authenticator app.", email)
+        if user.role not in ("owner", "finance"):
+            return _render(cname, params, "Only owners and finance users can connect an AI employee.", email)
+        db.commit()
+        tk = _sign({"u": user.id, "c": client_id, "r": redirect_uri, "cc": code_challenge, "exp": int(time.time()) + 600})
+        return _render_choose(cname, params, tk, _active_agents(db, user.company_id))
+
+    # ---- step 2: the signed ticket proves the sign-in; the person must pick an employee or explicitly create one.
+    data = _unsign(ticket)
+    if not data or data.get("c") != client_id or data.get("r") != redirect_uri or data.get("cc") != code_challenge:
+        return _render(cname, params, "That sign-in expired. Please sign in again.")
+    user = db.get(User, data["u"])
+    if not user or user.status == "disabled" or user.role not in ("owner", "finance") or not user.company_id:
+        return _render(cname, params, "That sign-in is no longer valid. Please sign in again.")
+    company = db.get(Company, user.company_id)
+    agents = _active_agents(db, company.id)
+    if not choice:
+        return _render_choose(cname, params, ticket, agents, "Choose an AI employee, or create a new one.")
+    if choice == "__new__":
+        name = " ".join(new_name.split())[:60]
+        if not name:
+            return _render_choose(cname, params, ticket, agents, "Give the new AI employee a name.")
         dept = db.query(Department).filter(Department.company_id == company.id).order_by(Department.id).first()
         if not dept:
             dept = Department(company_id=company.id, name="General", monthly_budget=500_000)
             db.add(dept)
             db.flush()
-        n = db.query(Agent).filter(Agent.company_id == company.id, Agent.name.like("My Claude%")).count()
         _, h, prefix = generate_agent_key()
-        ag = Agent(company_id=company.id, department_id=dept.id, name="My Claude" if n == 0 else f"My Claude {n + 1}", role="general", api_key_hash=h, key_prefix=prefix,
+        ag = Agent(company_id=company.id, department_id=dept.id, name=name, role="general", api_key_hash=h, key_prefix=prefix,
                    per_transaction_limit=100_000, monthly_limit=500_000, approval_threshold=50_000, allowed_categories=[], blocked_merchants=[])
         db.add(ag)
         db.flush()
-        audit.record(db, company.id, actor_type="user", actor_id=user.id, actor_name=user.full_name, event="agent.created", details={"id": ag.id, "name": ag.name, "via": "oauth-connect"})
+        audit.record(db, company.id, actor_type="user", actor_id=user.id, actor_name=user.full_name, event="agent.created", details={"id": ag.id, "name": ag.name, "via": "oauth-connect", "confirmed": True})
     else:
-        ag = next((a for a in agents if str(a.id) == agent), None)
+        ag = next((a for a in agents if str(a.id) == choice), None)
         if not ag:
-            return _render(_client_name(db, client_id), params, "That AI employee is not available.", email, agents)
+            return _render_choose(cname, params, ticket, agents, "That AI employee is not available.")
 
-    code = OAuthCode(code=secrets.token_urlsafe(32), client_id=client_id, redirect_uri=redirect_uri, code_challenge=code_challenge, scope=scope,
-                     user_id=user.id, agent_id=ag.id, company_id=company.id, expires_at=utcnow() + timedelta(seconds=CODE_TTL_SECONDS))
-    db.add(code)
-    audit.record(db, company.id, actor_type="user", actor_id=user.id, actor_name=user.full_name, event="connector.authorized", details={"agent_id": ag.id, "client": _client_name(db, client_id)})
+    oc = OAuthCode(code=secrets.token_urlsafe(32), client_id=client_id, redirect_uri=redirect_uri, code_challenge=code_challenge, scope=scope,
+                   user_id=user.id, agent_id=ag.id, company_id=company.id, expires_at=utcnow() + timedelta(seconds=CODE_TTL_SECONDS))
+    db.add(oc)
+    audit.record(db, company.id, actor_type="user", actor_id=user.id, actor_name=user.full_name, event="connector.authorized", details={"agent_id": ag.id, "client": cname})
     db.commit()
     sep = "&" if "?" in redirect_uri else "?"
-    return RedirectResponse(f"{redirect_uri}{sep}{urlencode({'code': code.code, 'state': state})}", status_code=302)
+    return _render_done(ag, company, f"{redirect_uri}{sep}{urlencode({'code': oc.code, 'state': state})}")
 
 
 # ---------------------------------------------------------------- token

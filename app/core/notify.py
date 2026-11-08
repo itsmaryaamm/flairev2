@@ -113,7 +113,7 @@ def notify_decision(db: Session, company: Company, pr: PurchaseRequest, actor: U
     if not ids:
         return
     ctx = hold_context(pr)
-    outcome = {"completed": "Paid", "rejected": "Rejected", "denied": "Denied", "failed": "Payment failed", "approved": "Approved"}.get(pr.status, pr.status)
+    outcome = {"completed": "Authorized (simulated)", "rejected": "Rejected", "denied": "Denied", "failed": "Payment failed", "approved": "Approved"}.get(pr.status, pr.status)
     title = f"{outcome}: {ctx['amount_text']} at {ctx['merchant']}"
     body = f"{ctx['employee']}'s request for {ctx['merchant']} ({ctx['amount_text']}) was {outcome.lower()} by {actor.full_name}."
     err = (pr.decision or {}).get("payment_error")

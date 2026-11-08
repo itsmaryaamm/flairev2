@@ -70,13 +70,16 @@ async def asa(request: Request, db: Session = Depends(get_db)):
         return JSONResponse({"result": "UNAUTHORIZED_MERCHANT"})
     company = db.get(Company, card.company_id)
 
-    # Signature: verified when the company has stored its ASA secret (Lithic starts signing once the secret is fetched).
+    # Signature: required. An unsigned callback, a callback for a company with no stored signing secret, or a bad signature is declined.
     secret = decrypt(company.lithic_asa_secret_enc) if company.lithic_asa_secret_enc else None
-    if secret and request.headers.get("webhook-signature"):
-        try:
-            verify_standard_webhook(raw, {k.lower(): v for k, v in request.headers.items()}, secret)
-        except HTTPException:
-            return _decline("SUSPECTED_FRAUD", "bad signature", db, company.id, {"card_id": card.id})
+    if not secret:
+        return _decline("SUSPECTED_FRAUD", "no signing secret stored, cannot verify the issuer", db, company.id, {"card_id": card.id})
+    if not request.headers.get("webhook-signature"):
+        return _decline("SUSPECTED_FRAUD", "unsigned callback", db, company.id, {"card_id": card.id})
+    try:
+        verify_standard_webhook(raw, {k.lower(): v for k, v in request.headers.items()}, secret)
+    except HTTPException:
+        return _decline("SUSPECTED_FRAUD", "bad signature", db, company.id, {"card_id": card.id})
 
     event_id = request.headers.get("webhook-id") or body.get("token") or ""
     if event_id and db.query(WebhookEvent).filter(WebhookEvent.provider == "lithic-asa", WebhookEvent.event_id == event_id).first():

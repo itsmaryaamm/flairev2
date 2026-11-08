@@ -30,46 +30,87 @@ router = APIRouter()
 PROTOCOL_VERSION = "2025-06-18"
 CURRENT_IP: contextvars.ContextVar[str] = contextvars.ContextVar("flaire_mcp_ip", default="unknown")
 
-# Paste-able instructions for a ChatGPT custom GPT / project or a Claude project. Also served by GET /connector-info.
+# Sent to the AI when the connector starts (MCP "instructions"). Kept short on purpose: hosts cut long text, and
+# the tool descriptions below carry the detail. These are hints that make the AI likely to use Flaire, not a guarantee.
+SERVER_INSTRUCTIONS = (
+    "Flaire is this AI employee's company finance tool. Use it whenever a task involves spending company money: buying or "
+    "renewing a subscription, software, ads, services or supplies. First call check_budget, then request_purchase with the "
+    "real merchant, exact amount, currency and business purpose. Do not invent details, split purchases or relabel "
+    "categories. Flaire decides: allowed, needs a human, or blocked. This is a SANDBOX: results are simulated and no "
+    "real money moves. Never say a purchase was paid."
+)
+
+# Optional longer guide for advanced users (project instructions) and for the get_usage_guide tool. Never required.
 AGENT_INSTRUCTIONS = (
-    "You have Flaire, your company's finance department for AI employees, connected as a tool. "
-    "Whenever a task needs money spent (ads, software, subscriptions, services, freelancers), do not ask the user whether to use Flaire or whether to request payment. "
-    "Call check_budget, then request_purchase immediately with your best merchant, category, amount and a one line reason. "
-    "Only ask the user for a detail you cannot infer. Report the verdict in one sentence. "
-    "Amounts are in SAR. Prefer the trusted suppliers check_budget lists. Never split a purchase, relabel a category or retry a held request: "
-    "paid means proceed, pending_approval means a human will decide, denied means read the reason and propose a compliant alternative. "
+    "You are connected to Flaire as a specific company AI employee. Use Flaire when a task requires company spending authorization, "
+    "budget information or purchase history. Before submitting a purchase request, establish the merchant, exact amount, currency and "
+    "business purpose; do not invent purchase details. Flaire determines whether spending is allowed, needs human approval, or is denied. "
+    "Never bypass restrictions, split purchases to avoid limits, or misrepresent a merchant or category. A Flaire authorization is not proof of "
+    "payment: in the sandbox every result is simulated and no real money moves. Respect your app's own confirmation prompts for tool use. "
     "You cannot approve purchases or change limits; a human does that in the Flaire dashboard."
 )
 
+_RO = {"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False}
+
 TOOLS = [
-    {"name": "check_budget",
-     "description": ("Your spending permissions, the department's remaining budget, trusted suppliers and company policy. Call this first, without asking the user, "
-                     "whenever a task needs money spent. It is read only and instant; go straight to request_purchase after it."),
-     "inputSchema": {"type": "object", "properties": {}}},
-    {"name": "request_purchase",
-     "description": ("Pay for something through Flaire. Call it immediately when a task needs money spent (ads, software, subscriptions, services, freelancers): "
-                     "do not ask the user for permission to request payment, just pick your best merchant, category and amount in SAR and give a one line reason. "
-                     "Flaire answers completed (paid, proceed), pending_approval (a human will decide, do not retry, say so in one sentence) or denied (read the reasons, "
-                     "propose a compliant alternative). Never split a purchase to dodge a limit or relabel a category."),
-     "inputSchema": {"type": "object", "required": ["amount_sar", "merchant", "category", "description"],
-                     "properties": {"amount_sar": {"type": "number", "description": "Amount in Saudi Riyals, e.g. 500"},
-                                    "merchant": {"type": "string", "description": "Who gets paid, e.g. Google Ads"},
+    {"name": "get_agent_context", "title": "Who am I in Flaire",
+     "description": ("Shows which company and AI employee you are connected as, your sandbox spending permissions, and what the possible outcomes mean. "
+                     "Use it when you are unsure whether you can spend company money, or at the start of a purchasing conversation. Read only."),
+     "annotations": {**_RO, "title": "Who am I in Flaire"}, "inputSchema": {"type": "object", "properties": {}}},
+    {"name": "check_budget", "title": "Check spending authority",
+     "description": ("Use this BEFORE any purchase or subscription: it returns your remaining budget, per purchase limit, the amount above which a human must approve, "
+                     "allowed categories and the company's trusted suppliers. Read only and instant. Call it whenever a task involves spending company money, "
+                     "or when the user asks how much you can spend."),
+     "annotations": {**_RO, "title": "Check spending authority"}, "inputSchema": {"type": "object", "properties": {}}},
+    {"name": "request_purchase", "title": "Request a purchase",
+     "description": ("Ask Flaire to authorize a purchase on behalf of the company, for example a software subscription, ads, a service or supplies. "
+                     "Only call it once you know the real merchant, the exact amount, the currency and the business purpose; ask the user for anything missing, "
+                     "and call check_budget first. Do not split a purchase, relabel a category or retry a held request. "
+                     "Flaire answers with an outcome: simulated_authorization (allowed within your limits), pending_approval (a human must approve in the Flaire dashboard; tell the user and do not retry), "
+                     "denied (read the reasons and offer a compliant alternative) or failed. This is a sandbox: every outcome is simulated and no real money moves. "
+                     "Never tell the user a purchase was paid."),
+     "annotations": {"title": "Request a purchase", "readOnlyHint": False, "destructiveHint": False, "idempotentHint": False, "openWorldHint": False},
+     "inputSchema": {"type": "object", "required": ["amount", "merchant", "category", "description"],
+                     "properties": {"amount": {"type": "number", "description": "The exact amount to spend, in the given currency, e.g. 49 for a 49 dollar plan"},
+                                    "currency": {"type": "string", "enum": ["SAR", "USD"], "default": "SAR", "description": "Currency of amount. USD is converted to SAR at 3.75."},
+                                    "amount_sar": {"type": "number", "description": "Deprecated. Use amount with currency SAR."},
+                                    "merchant": {"type": "string", "description": "The real company being paid, e.g. Buffer or Google Ads. Never invent one."},
                                     "category": {"type": "string", "description": "advertising, software, equipment, services, travel, logistics, utilities, office or other"},
-                                    "description": {"type": "string", "description": "One line: what the purchase is for"}}}},
-    {"name": "get_purchase_status",
-     "description": "Current status and decision reasons of one of your purchase requests (for example to see if a human approved a held request).",
-     "inputSchema": {"type": "object", "required": ["request_id"], "properties": {"request_id": {"type": "integer"}}}},
-    {"name": "list_my_requests",
-     "description": "Your recent purchase requests with status, amount and reasons. Use it before buying something that may already be paid for, and to report spend.",
-     "inputSchema": {"type": "object", "properties": {"limit": {"type": "integer", "default": 10}}}},
+                                    "description": {"type": "string", "description": "One line: the business purpose of the purchase"}}}},
+    {"name": "get_purchase_status", "title": "Check a purchase request",
+     "description": "Current outcome and reasons for one of your purchase requests, for example to see whether a human has approved a pending request. Read only.",
+     "annotations": {**_RO, "title": "Check a purchase request"},
+     "inputSchema": {"type": "object", "required": ["request_id"], "properties": {"request_id": {"type": "integer", "description": "The request_id returned by request_purchase"}}}},
+    {"name": "list_my_requests", "title": "List my purchase requests",
+     "description": "Your recent purchase requests with outcome, amount and reasons. Use it before buying something that may already have been requested, and to report spending. Read only.",
+     "annotations": {**_RO, "title": "List my purchase requests"},
+     "inputSchema": {"type": "object", "properties": {"limit": {"type": "integer", "default": 10, "description": "How many to return, up to 50"}}}},
+    {"name": "get_usage_guide", "title": "Flaire usage guide",
+     "description": "Optional. Returns the full guidance for using Flaire correctly, including what each outcome means. Read only.",
+     "annotations": {**_RO, "title": "Flaire usage guide"}, "inputSchema": {"type": "object", "properties": {}}},
     # ChatGPT connector requirements: a read-only search/fetch pair over this employee's own requests.
-    {"name": "search",
+    {"name": "search", "title": "Search my purchase requests",
      "description": "Search this AI employee's purchase requests by merchant, category, description, status or request id. Read only. Returns results with id, title and url; use fetch for the full record.",
+     "annotations": {**_RO, "title": "Search my purchase requests"},
      "inputSchema": {"type": "object", "required": ["query"], "properties": {"query": {"type": "string", "description": "Free text, for example 'Google Ads', 'pending' or '42'"}}}},
-    {"name": "fetch",
+    {"name": "fetch", "title": "Fetch a purchase request",
      "description": "Fetch the full record of one purchase request by id (from search or list_my_requests). Read only.",
+     "annotations": {**_RO, "title": "Fetch a purchase request"},
      "inputSchema": {"type": "object", "required": ["id"], "properties": {"id": {"type": "string", "description": "The request id"}}}},
 ]
+
+USD_TO_SAR = 3.75
+
+# What the AI is told for each internal status. Nothing here ever says "paid": the sandbox moves no real money.
+OUTCOMES = {
+    "completed": ("simulated_authorization", "Simulated authorization", "Allowed within your limits. This is a sandbox: the payment is simulated and no real money moved. Do not describe it as a completed payment."),
+    "settled": ("simulated_authorization", "Simulated authorization", "Allowed within your limits. This is a sandbox: the payment is simulated and no real money moved. Do not describe it as a completed payment."),
+    "approved": ("simulated_authorization", "Approved, simulated", "Approved. Payment is simulated in the sandbox and no real money moved."),
+    "pending_approval": ("pending_approval", "Pending approval", "A human must approve this in the Flaire dashboard. Do not retry. Tell the user it is pending."),
+    "denied": ("denied", "Blocked", "Flaire blocked this request. Read the reasons and offer a compliant alternative or report back."),
+    "rejected": ("denied", "Declined by a person", "A person declined this request. Do not retry."),
+    "failed": ("failed", "Failed", "The simulated payment failed. Report the payment_error."),
+}
 
 
 def _request_url(pr: PurchaseRequest) -> str:
@@ -130,7 +171,8 @@ def _budget(db: Session, agent: Agent) -> dict:
 
 def _pr_view(pr: PurchaseRequest) -> dict:
     out = purchase_out(pr).model_dump()
-    return {"request_id": out["id"], "status": out["status"], "verdict": out["decision"].get("verdict"), "reasons": out["decision"].get("reasons", []), "flags": out.get("flags", []),
+    outcome, label, message = OUTCOMES.get(out["status"], (out["status"], out["status"].replace("_", " ").capitalize(), ""))
+    return {"request_id": out["id"], "status": outcome, "outcome": label, "simulated": True, "payment_mode": "sandbox_simulated", "message": message, "internal_status": out["status"], "verdict": out["decision"].get("verdict"), "reasons": out["decision"].get("reasons", []), "flags": out.get("flags", []),
             "payment_error": out["decision"].get("payment_error"), "amount_sar": out["amount"] / 100, "merchant": out["merchant"],
             "category": out["category"], "created_at": out["created_at"], "approved_by": (out["approved_by"] or {}).get("full_name")}
 
@@ -140,11 +182,15 @@ def _call_tool(db: Session, agent: Agent, name: str, args: dict) -> dict:
         return _text(_budget(db, agent))
     if name == "request_purchase":
         try:
-            amount = int(round(float(args["amount_sar"]) * 100))
+            raw = args["amount"] if args.get("amount") is not None else args["amount_sar"]
+            currency = str(args.get("currency") or "SAR").upper()
+            if currency not in ("SAR", "USD"):
+                return _text({"error": "currency must be SAR or USD"}, True)
+            amount = int(round(float(raw) * (USD_TO_SAR if currency == "USD" else 1.0) * 100))
         except (KeyError, TypeError, ValueError):
-            return _text({"error": "amount_sar must be a number"}, True)
+            return _text({"error": "amount must be a number"}, True)
         if amount <= 0:
-            return _text({"error": "amount_sar must be greater than zero"}, True)
+            return _text({"error": "amount must be greater than zero"}, True)
         from app.schemas import MAX_PURCHASE_HALALAS
         if amount > MAX_PURCHASE_HALALAS:
             return _text({"error": f"amount_sar must be at most {MAX_PURCHASE_HALALAS // 100:,}"}, True)
@@ -153,9 +199,22 @@ def _call_tool(db: Session, agent: Agent, name: str, args: dict) -> dict:
                                      category=str(args.get("category") or "other")[:60], description=str(args.get("description") or "")[:2000], card_id=None,
                                      source="mcp", client_ip=CURRENT_IP.get())
         view = _pr_view(pr)
-        view["what_to_do"] = {"completed": "Paid. You are done with this item.", "pending_approval": "Waiting for a human. Do not retry; tell the user it is pending.",
-                              "denied": "Blocked. Read the reasons and pick a compliant alternative or report back.", "failed": "Approved but payment failed. Report the payment_error."}.get(pr.status, "")
+        if currency == "USD":
+            view["requested"] = f"USD {float(raw):,.2f} converted to SAR {amount / 100:,.2f} at {USD_TO_SAR}"
+        view["what_to_do"] = view["message"]
         return _text(view, is_error=pr.status in ("denied", "failed"))
+    if name == "get_agent_context":
+        b = _budget(db, agent)
+        return _text({"connected_as": b["agent"], "company": b["company"], "role": b["role"], "mode": "sandbox",
+                      "sandbox_notice": "Every purchase here is simulated. No real money moves.",
+                      "permissions": {"per_purchase_limit_sar": b["per_transaction_limit_sar"], "monthly_limit_sar": b["monthly_limit_sar"],
+                                      "spent_this_month_sar": b["spent_this_month_sar"], "human_approval_at_or_above_sar": b["needs_human_approval_at_or_above_sar"],
+                                      "allowed_categories": b["allowed_categories"]},
+                      "outcomes": {"simulated_authorization": "Allowed within your limits (simulated, not paid)", "pending_approval": "A human must approve in the Flaire dashboard",
+                                   "denied": "Blocked by company rules; read the reasons", "failed": "The simulated payment failed"},
+                      "next_step": "Call check_budget before any purchase."})
+    if name == "get_usage_guide":
+        return _text({"guide": AGENT_INSTRUCTIONS})
     if name == "get_purchase_status":
         pr = db.get(PurchaseRequest, int(args.get("request_id", 0)))
         if not pr or pr.agent_id != agent.id:
@@ -180,8 +239,8 @@ def _handle(db: Session, agent: Agent, msg: dict) -> dict | None:
     if method == "initialize":
         company = db.get(Company, agent.company_id)
         return _rpc_result(id_, {"protocolVersion": params.get("protocolVersion") or PROTOCOL_VERSION, "capabilities": {"tools": {"listChanged": False}},
-                                 "serverInfo": {"name": "flaire", "title": f"Flaire · {company.name}", "version": "0.3.0"},
-                                 "instructions": f"You are '{agent.name}', an AI employee of {company.name}. " + AGENT_INSTRUCTIONS})
+                                 "serverInfo": {"name": "flaire", "title": f"Flaire · {company.name}", "version": "0.4.0"},
+                                 "instructions": f"You are '{agent.name}', an AI employee of {company.name}. " + SERVER_INSTRUCTIONS})
     if method in ("notifications/initialized", "notifications/cancelled"):
         return None
     if method == "ping":
