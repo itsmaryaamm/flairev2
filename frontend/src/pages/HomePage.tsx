@@ -8,6 +8,7 @@ import type { AdminView, DashboardSummary, FeeStatement, MyView, PurchaseRequest
 import { KillSwitchPill } from '../components/Layout'
 import { ErrorNote } from '../components/ErrorNote'
 import { GettingStartedCard } from '../components/dashboard/GettingStartedCard'
+import { GetTheApp } from '../components/home/GetTheApp'
 import { NeedsYou } from '../components/home/NeedsYou'
 import { MonthCard } from '../components/home/MonthCard'
 import { RecentActivity } from '../components/home/RecentActivity'
@@ -127,6 +128,7 @@ export default function HomePage() {
         {header}
         {error && <ErrorNote message={error} />}
         {needsYou}
+        <GetTheApp />
         <MonthCard spent={totals?.spent_this_period ?? 0} budget={totals?.budget_total ?? 0} fees={fees.data} parts={(summary.data?.agents ?? []).map((a) => ({ name: a.name, spent: a.spent_this_period }))} />
         <RecentActivity items={recent} />
       </div>
@@ -144,6 +146,7 @@ export default function HomePage() {
       <div className="grid lg:grid-cols-2 gap-5 items-start">
         <div className="space-y-5 min-w-0">
           {needsYou}
+          <GetTheApp />
           {!admin && myView.data && <MyViewPanel view={myView.data} />}
           {admin && adminView.data && <AdminBlock view={adminView.data} />}
         </div>
