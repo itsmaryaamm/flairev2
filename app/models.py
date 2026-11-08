@@ -70,6 +70,7 @@ class User(Base):
     role: Mapped[str] = mapped_column(String(30), default="owner")  # owner | admin | finance | dept_head | viewer | auditor
     department_id: Mapped[int | None] = mapped_column(ForeignKey("departments.id"), nullable=True)  # home department (dept_head)
     locale: Mapped[str] = mapped_column(String(5), default="en")
+    avatar: Mapped[str | None] = mapped_column(Text, nullable=True)  # small data URL, set from the account menu
     status: Mapped[str] = mapped_column(String(20), default="active")  # active | disabled
     totp_secret_enc: Mapped[str | None] = mapped_column(Text, nullable=True)
     totp_enabled: Mapped[bool] = mapped_column(Boolean, default=False)

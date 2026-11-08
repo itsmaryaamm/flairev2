@@ -121,3 +121,22 @@ def test_unknown_url_client_cannot_use_an_attacker_redirect(monkeypatch):
     assert client.get("/api/v1/oauth/authorize", params=q).status_code == 200  # the known Claude callback is still accepted
     q["redirect_uri"] = "https://claude.ai.evil.example/api/mcp/auth_callback"
     assert client.get("/api/v1/oauth/authorize", params=q).status_code == 400
+
+
+def test_profile_edit_name_and_photo():
+    from fastapi.testclient import TestClient
+    from app.main import app
+    import uuid
+    c = TestClient(app)
+    email = f"p{uuid.uuid4().hex[:8]}@example.com"
+    r = c.post("/api/v1/auth/register", json={"email": email, "password": "Password123!", "full_name": "Old Name", "company_name": "Co"})
+    assert r.status_code in (200, 201), r.text
+    h = {"Authorization": "Bearer " + r.json()["access_token"]}
+    r = c.patch("/api/v1/auth/me", json={"full_name": "  New   Name "}, headers=h)
+    assert r.status_code == 200 and r.json()["user"]["full_name"] == "New Name"
+    r = c.patch("/api/v1/auth/me", json={"avatar": "data:image/png;base64,iVBORw0KGgo="}, headers=h)
+    assert r.json()["user"]["avatar"].startswith("data:image/png")
+    assert c.patch("/api/v1/auth/me", json={"avatar": "data:text/html;base64,PGI+"}, headers=h).status_code == 422
+    r = c.patch("/api/v1/auth/me", json={"remove_avatar": True}, headers=h)
+    assert r.json()["user"]["avatar"] is None
+    assert c.get("/api/v1/auth/me", headers=h).json()["user"]["full_name"] == "New Name"

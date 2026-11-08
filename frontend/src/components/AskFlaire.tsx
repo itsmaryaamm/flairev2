@@ -8,6 +8,11 @@ export function AskFlaire() {
   const [open, setOpen] = useState(false)
   const t = useT()
   useEffect(() => {
+    const onAsk = () => setOpen(true)
+    window.addEventListener('flaire:ask', onAsk)
+    return () => window.removeEventListener('flaire:ask', onAsk)
+  }, [])
+  useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
     document.addEventListener('keydown', onKey)
@@ -30,7 +35,7 @@ export function AskFlaire() {
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Ask Flaire"
-          className="hidden md:inline-flex fixed z-40 end-7 bottom-7 items-center gap-2 h-12 px-4 rounded-full bg-ink text-white text-sm font-semibold shadow-[0_8px_24px_rgba(22,17,43,.28)] hover:bg-brand transition-colors"
+          className="hidden fixed z-40 end-7 bottom-7 items-center gap-2 h-12 px-4 rounded-full bg-ink text-white text-sm font-semibold shadow-[0_8px_24px_rgba(22,17,43,.28)] hover:bg-brand transition-colors"
         >
           <MessageCircle className="h-5 w-5" />
           Ask Flaire

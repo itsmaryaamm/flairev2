@@ -1,5 +1,6 @@
 import { Suspense, lazy } from 'react'
 import { Navigate, Outlet, Route, Routes, useLocation, useParams } from 'react-router-dom'
+import { useView } from './lib/view'
 import { useAuth } from './lib/auth'
 import { Layout } from './components/Layout'
 import { PageLoader } from './components/Spinner'
@@ -11,7 +12,10 @@ import HomePage from './pages/HomePage'
 import EmployeesPage from './pages/EmployeesPage'
 import EmployeeDetailPage from './pages/EmployeeDetailPage'
 import ActivityPage from './pages/ActivityPage'
-import SettingsPage from './pages/SettingsPage'
+import ControlsPage from './pages/ControlsPage'
+import OverviewPage from './pages/OverviewPage'
+import ApprovalsPage from './pages/ApprovalsPage'
+import ConnectionsPage from './pages/ConnectionsPage'
 import WelcomePage from './pages/WelcomePage'
 import LandingPage from './pages/LandingPage'
 import SetupPage from './pages/SetupPage'
@@ -19,9 +23,7 @@ import AuthCallbackPage from './pages/AuthCallbackPage'
 import { hasAdminView } from './lib/view'
 
 // The team, finance and policy pages are admin tools; load them only when opened.
-const TeamPage = lazy(() => import('./pages/TeamPage'))
 const FinancePage = lazy(() => import('./pages/FinancePage'))
-const PolicyPage = lazy(() => import('./pages/PolicyPage'))
 const InviteAcceptPage = lazy(() => import('./pages/InviteAcceptPage'))
 const PlatformPage = lazy(() => import('./pages/PlatformPage'))
 
@@ -55,6 +57,21 @@ function PublicOnly() {
   return <Outlet />
 }
 
+/** Desktop shows the Overview, phones the simpler Home. */
+function Home() {
+  const { phone } = useView()
+  return phone ? <HomePage /> : <OverviewPage />
+}
+
+/** Old /settings, /team and /policy links (and their #anchors) land on the new Connections and Controls pages. */
+function LegacyRedirect({ to }: { to?: string }) {
+  const { hash } = useLocation()
+  const id = hash.replace('#', '')
+  if (to) return <Navigate to={to} replace />
+  if (id === 'connect' || id === 'payments') return <Navigate to={`/connections${hash}`} replace />
+  return <Navigate to={`/controls${hash}`} replace />
+}
+
 /** Old /agents/:id links keep working. */
 function AgentRedirect() {
   const { id } = useParams()
@@ -80,25 +97,28 @@ export default function App() {
           <Route path="/setup" element={<SetupPage />} />
           <Route path="/welcome" element={<WelcomePage />} />
           <Route element={<Layout />}>
-            <Route path="/" element={<HomePage />} />
+            <Route path="/" element={<Home />} />
             <Route path="/employees" element={<EmployeesPage />} />
             <Route path="/employees/:id" element={<EmployeeDetailPage />} />
-            <Route path="/activity" element={<ActivityPage />} />
-            <Route path="/team" element={<TeamPage />} />
+            <Route path="/spending" element={<ActivityPage />} />
+            <Route path="/approvals" element={<ApprovalsPage />} />
+            <Route path="/connections" element={<ConnectionsPage />} />
+            <Route path="/controls" element={<ControlsPage />} />
             <Route element={<RequireAdminView />}>
               <Route path="/finance" element={<FinancePage />} />
-              <Route path="/policy" element={<PolicyPage />} />
             </Route>
-            <Route path="/settings" element={<SettingsPage />} />
             <Route path="/platform" element={<PlatformPage />} />
             {/* Old routes */}
             <Route path="/m" element={<Navigate to="/" replace />} />
-            <Route path="/approvals" element={<Navigate to="/" replace />} />
-            <Route path="/transactions" element={<Navigate to="/activity" replace />} />
+            <Route path="/activity" element={<Navigate to="/spending" replace />} />
+            <Route path="/settings" element={<LegacyRedirect />} />
+            <Route path="/team" element={<LegacyRedirect to="/controls#people" />} />
+            <Route path="/policy" element={<LegacyRedirect to="/controls#history" />} />
+            <Route path="/transactions" element={<Navigate to="/spending" replace />} />
             <Route path="/agents" element={<Navigate to="/employees" replace />} />
             <Route path="/agents/:id" element={<AgentRedirect />} />
-            <Route path="/budgets" element={<Navigate to="/settings" replace />} />
-            <Route path="/cards" element={<Navigate to="/settings" replace />} />
+            <Route path="/budgets" element={<Navigate to="/controls#budgets" replace />} />
+            <Route path="/cards" element={<Navigate to="/controls#budgets" replace />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

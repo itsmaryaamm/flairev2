@@ -36,6 +36,7 @@ class UserOut(BaseModel):
     role: str
     totp_enabled: bool = False
     is_platform_admin: bool = False
+    avatar: str | None = None
     model_config = {"from_attributes": True}
 
 

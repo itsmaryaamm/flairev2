@@ -79,7 +79,7 @@ export function CardStateText({ state, last4 }: { state: CardState; last4?: stri
   return (
     <>
       {t('card.noneNoKey')}{' '}
-      <Link to="/settings#payments" className="font-semibold text-brand hover:underline">
+      <Link to="/connections#payments" className="font-semibold text-brand hover:underline">
         {t('nav.settings')}
       </Link>
     </>

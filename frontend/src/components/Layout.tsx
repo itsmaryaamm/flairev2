@@ -1,6 +1,7 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { Home, Users, Activity, Settings, LogOut, ShieldAlert, ShieldCheck, UserCog, Landmark, Scale, Server } from 'lucide-react'
+import { Search, Plus, LayoutGrid, Users, CreditCard, ShieldCheck, Landmark, Plug, SlidersHorizontal, Server, ShieldAlert } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { useAuth } from '../lib/auth'
 import { api } from '../lib/api'
 import { useFetch } from '../lib/useFetch'
@@ -9,39 +10,43 @@ import { useView, hasAdminView } from '../lib/view'
 import type { PurchaseRequest } from '../types'
 import { KillSwitchBanner } from './KillSwitchBanner'
 import { useKillSwitch } from './KillSwitchPanel'
-import { NotificationsBell } from './NotificationsBell'
 import { AskFlaire } from './AskFlaire'
+import { UserRow } from './AccountMenu'
+import { CommandPalette } from './CommandPalette'
 
-type NavItem = { to: string; key: string; icon: typeof Home; end?: boolean }
+type NavItem = { to: string; label: string; icon: LucideIcon; end?: boolean; admin?: boolean }
 
-const ALL_NAV: (NavItem & { admin?: boolean })[] = [
-  { to: '/', key: 'nav.home', icon: Home, end: true },
-  { to: '/employees', key: 'nav.employees', icon: Users },
-  { to: '/activity', key: 'nav.activity', icon: Activity },
-  { to: '/team', key: 'nav.team', icon: UserCog },
-  { to: '/finance', key: 'nav.finance', icon: Landmark, admin: true },
-  { to: '/policy', key: 'nav.policy', icon: Scale, admin: true },
-  { to: '/settings', key: 'nav.settings', icon: Settings },
+export const OPERATE: NavItem[] = [
+  { to: '/', label: 'Overview', icon: LayoutGrid, end: true },
+  { to: '/employees', label: 'AI workforce', icon: Users },
+  { to: '/spending', label: 'Spending', icon: CreditCard },
+  { to: '/approvals', label: 'Approvals', icon: ShieldCheck },
+]
+export const MANAGE: NavItem[] = [
+  { to: '/finance', label: 'Finance', icon: Landmark, admin: true },
+  { to: '/connections', label: 'Connections', icon: Plug },
+  { to: '/controls', label: 'Controls', icon: SlidersHorizontal },
+]
+const PLATFORM_NAV: NavItem = { to: '/platform', label: 'Platform', icon: Server }
+
+/** Phone tabs: the simplest app. */
+const PHONE_TABS: { to: string; key: string; end?: boolean }[] = [
+  { to: '/', key: 'nav.home', end: true },
+  { to: '/spending', key: 'nav.activity' },
+  { to: '/controls', key: 'nav.settings' },
 ]
 
-const PLATFORM_NAV: NavItem = { to: '/platform', key: 'nav.platform', icon: Server }
-
-/** Phone tabs: the simplest app. Employees is reachable from Settings. */
-const PHONE_TABS = ['/', '/activity', '/settings']
-
-/** Nav items this role may open on desktop. Platform staff also get the console. */
-export function navForRole(role: string | undefined | null, platformAdmin = false): NavItem[] {
-  const admin = hasAdminView(role)
-  const items: NavItem[] = ALL_NAV.filter((n) => !n.admin || admin)
-  return platformAdmin ? [...items, PLATFORM_NAV] : items
-}
-
-function initials(name: string | undefined, email: string | undefined): string {
-  const src = (name ?? '').trim() || (email ?? '').split('@')[0] || '?'
-  const parts = src.split(/[\s._-]+/).filter(Boolean)
-  const chars = parts.length >= 2 ? parts[0][0] + parts[1][0] : src.slice(0, 2)
-  return chars.toUpperCase()
-}
+const TITLES: { match: (p: string) => boolean; title: string; sub: string }[] = [
+  { match: (p) => p === '/', title: 'Overview', sub: 'Authority left, what needs you, what happened' },
+  { match: (p) => p.startsWith('/employees/'), title: 'AI employee', sub: 'Card, limits and history' },
+  { match: (p) => p.startsWith('/employees'), title: 'AI workforce', sub: 'Every AI employee, its card and its limits' },
+  { match: (p) => p.startsWith('/spending'), title: 'Spending', sub: 'Every request and what Flaire decided' },
+  { match: (p) => p.startsWith('/approvals'), title: 'Approvals', sub: 'Requests that need a person, and past decisions' },
+  { match: (p) => p.startsWith('/finance'), title: 'Finance', sub: 'Month close, VAT and exports' },
+  { match: (p) => p.startsWith('/connections'), title: 'Connections', sub: 'Connect Claude or ChatGPT, payments and the phone app' },
+  { match: (p) => p.startsWith('/controls'), title: 'Controls', sub: 'Budgets, rules, security and people' },
+  { match: (p) => p.startsWith('/platform'), title: 'Platform', sub: 'Flaire staff console' },
+]
 
 /** Small kill switch state pill. Red when ON. Tapping opens the shared reason / confirm modal. */
 export function KillSwitchPill({ className = '' }: { className?: string }) {
@@ -93,8 +98,8 @@ export function ViewToggle({ className = '', compact = false }: { className?: st
 }
 
 /**
- * One responsive shell. Desktop (md and up): slim sidebar on the start side (left in English, right in Arabic) with every destination.
- * Phones: three bottom tabs (Home, Activity, Settings) and a top bar with the bell.
+ * One responsive shell. Desktop (md and up): sticky sidebar (Operate / Manage), sticky header with the sandbox pill, Ask Flaire and Connect AI.
+ * Phones: three bottom tabs (Home, Activity, Settings), Ask Flaire bar above them.
  */
 export function Layout() {
   const { user, company, logout } = useAuth()
@@ -103,95 +108,132 @@ export function Layout() {
   const t = useT()
   const pending = useFetch(() => api.get<PurchaseRequest[]>('/approvals').then((r) => r.data), [location.pathname])
   const pendingCount = pending.data?.length ?? 0
-  const nav = useMemo(() => navForRole(user?.role, !!user?.is_platform_admin), [user?.role, user?.is_platform_admin])
-  const phoneTabs = useMemo(() => PHONE_TABS.map((to) => ALL_NAV.find((n) => n.to === to)!), [])
+  const admin = hasAdminView(user?.role)
+  const operate = OPERATE
+  const manage = useMemo(() => [...MANAGE.filter((n) => !n.admin || admin), ...(user?.is_platform_admin ? [PLATFORM_NAV] : [])], [admin, user?.is_platform_admin])
+  const [palette, setPalette] = useState(false)
+  const { on: killOn, openModal, modal: killModal } = useKillSwitch()
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setPalette((v) => !v)
+      }
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [])
 
   const doLogout = async () => {
     await logout()
     navigate('/login')
   }
 
-  const badge = (to: string) =>
-    to === '/' && pendingCount > 0 ? (
-      <span className="ms-auto inline-flex min-w-[20px] h-5 items-center justify-center rounded-pill bg-brand px-1.5 text-[11px] font-bold text-white tnum">
-        {pendingCount}
-      </span>
-    ) : null
+  const immersive = location.pathname === '/' || location.pathname === '/spending'
+  const head = TITLES.find((x) => x.match(location.pathname)) ?? TITLES[0]
 
-  const immersive = location.pathname === '/' || location.pathname === '/activity'
+  const navLink = (n: NavItem) => (
+    <NavLink
+      key={n.to}
+      to={n.to}
+      end={n.end}
+      className={({ isActive }) =>
+        `flex items-center gap-3 h-[38px] rounded-[10px] px-2.5 text-[15px] font-medium transition-colors ${isActive ? 'bg-[#F1E6FD] text-[#5B2A9E]' : 'text-[#443E50] hover:bg-[#E4E0D7]'}`
+      }
+    >
+      <n.icon className="h-[18px] w-[18px]" strokeWidth={1.7} />
+      {n.label}
+      {n.to === '/approvals' && pendingCount > 0 && <span className="ms-auto h-2 w-2 rounded-full bg-brand" aria-label={`${pendingCount} waiting`} />}
+    </NavLink>
+  )
+  const group = (label: string) => <div className="px-2.5 pt-3 pb-1 text-[12px] font-semibold uppercase tracking-[.04em] text-[#8A8494]">{label}</div>
+
   return (
     <div className="min-h-screen flex flex-col">
-      <div role="status" className={`${immersive ? 'hidden md:flex' : 'flex'} bg-[#F1E8FF] text-ink text-[13px] font-medium items-center justify-center gap-2.5 min-h-9 px-3 py-1 text-center`}>
+      <div className="hidden md:block h-[3px] bg-[#F2C14E] sticky top-0 z-40" aria-hidden="true" />
+      <div role="status" className={`${immersive ? 'hidden' : 'flex md:hidden'} bg-[#F1E8FF] text-ink text-[13px] font-medium items-center justify-center gap-2.5 min-h-9 px-3 py-1 text-center`}>
         <b className="rounded-[4px] bg-[#FBBF24] text-[#3B2A00] px-2 py-0.5 text-[11px]">Sandbox</b>
-        <span className="md:hidden">No real money moves.</span><span className="hidden md:inline">Simulated payments only. No real money moves.</span>
+        <span>No real money moves.</span>
       </div>
       <KillSwitchBanner />
       <div className="flex flex-1">
         {/* Desktop sidebar */}
-        <aside className="hidden md:flex md:flex-col w-[216px] shrink-0 border-e border-line bg-white sticky top-0 h-screen">
-          <div className="px-5 pt-6 pb-4">
-            <img src="/flaire-logo.png" alt="Flaire" className="h-7 w-auto" />
+        <aside className="hidden md:flex md:flex-col w-[244px] shrink-0 border-e border-[#E2DED5] bg-[#EFECE5] sticky top-[3px] h-[calc(100vh-3px)] overflow-y-auto [scrollbar-width:none] px-3.5 py-[18px]">
+          <div className="flex items-center gap-2.5 px-1.5 pb-3">
+            <img src="/flaire-mark.png" alt="" className="h-9 w-9 object-contain" />
+            <div className="leading-tight">
+              <div className="font-display text-[19px] font-semibold tracking-tight">Flaire</div>
+              <div className="text-[13px] text-[#6F6878]">{company?.name} · SAR</div>
+            </div>
           </div>
-          <nav className="flex-1 px-3 space-y-1">
-            {nav.map((n) => (
-              <NavLink
-                key={n.to}
-                to={n.to}
-                end={n.end}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                    isActive ? 'bg-[#EFECF6] text-ink' : 'text-neutral-600 hover:bg-[#F3F1F8] hover:text-ink'
-                  }`
-                }
-              >
-                <n.icon className="h-4 w-4" />
-                {t(n.key)}
-                {badge(n.to)}
-              </NavLink>
-            ))}
+          <nav className="flex-1">
+            {group('Operate')}
+            <div className="space-y-0.5">{operate.map(navLink)}</div>
+            {group('Manage')}
+            <div className="space-y-0.5">{manage.map(navLink)}</div>
           </nav>
-          <div className="px-4 pb-5 space-y-4">
-            <KillSwitchPill className="w-full justify-center" />
-            <div className="pt-4 border-t border-line flex items-center gap-1.5">
-              <span className="h-8 w-8 shrink-0 inline-flex items-center justify-center rounded-full bg-brand text-white text-xs font-bold">
-                {initials(user?.full_name, user?.email)}
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="text-sm font-semibold truncate">{user?.full_name || company?.name}</div>
-                <div className="text-[11px] text-neutral-500 truncate" title={user?.email}>
-                  {user?.role ? t(`role.${user.role}`) : user?.email}
-                </div>
+          <div className="mt-4 space-y-3">
+            <div className="rounded-xl bg-white border border-[#EFEBE4] px-3 py-2.5 flex items-center gap-2">
+              <ShieldAlert className={`h-4 w-4 ${killOn ? 'text-danger' : 'text-neutral-400'}`} />
+              <div className="flex-1 min-w-0">
+                <div className="text-[13px] font-semibold">Kill switch</div>
+                <div className="text-[12px] text-neutral-500">{killOn ? 'On. All spending is stopped.' : 'Off. Spending is allowed.'}</div>
               </div>
-              <NotificationsBell placement="bottom" />
-              <button onClick={doLogout} className="btn-ghost p-1.5" aria-label={t('auth.signOut')} title={t('auth.signOut')}>
-                <LogOut className="h-4 w-4 rtl-flip" />
+              <button
+                type="button"
+                role="switch"
+                aria-checked={killOn}
+                aria-label="Kill switch"
+                onClick={openModal}
+                className={`relative h-6 w-10 rounded-full transition-colors ${killOn ? 'bg-danger' : 'bg-[#D9D4E3]'}`}
+              >
+                <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${killOn ? 'start-[18px]' : 'start-0.5'}`} />
               </button>
             </div>
+            <UserRow onLogout={doLogout} />
           </div>
         </aside>
 
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Phone top bar */}
-          <header className={`${immersive ? 'hidden' : 'md:hidden'} sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-line px-4 h-14 flex items-center justify-between gap-2 pt-[env(safe-area-inset-top)]`}>
-            <img src="/flaire-logo.png" alt="Flaire" className="h-6 w-auto shrink-0" />
-            <div className="flex items-center gap-1">
-              <NotificationsBell />
-              <button onClick={doLogout} className="btn-ghost p-2 text-neutral-500 shrink-0" aria-label={t('auth.signOut')}>
-                <LogOut className="h-4 w-4 rtl-flip" />
-              </button>
+          {/* Desktop header */}
+          <header className="hidden md:flex sticky top-[3px] z-30 items-center gap-4 bg-[rgba(247,245,241,.86)] backdrop-blur-[14px] px-10 py-3.5">
+            <div className="min-w-0 flex-1">
+              <h1 className="font-display text-[26px] leading-tight font-semibold tracking-tightest truncate">{head.title}</h1>
+              <p className="text-[14px] text-[#6F6878] truncate">{head.sub}</p>
             </div>
+            <span title="Everything here is simulated. No real money moves, and no real card is charged." className="rounded-full bg-[#FBF0D9] text-[#5E4300] text-[13px] font-semibold px-3.5 h-9 inline-flex items-center gap-2 whitespace-nowrap">
+              <span className="h-2 w-2 rounded-full bg-[#C98A00]" /> Sandbox · simulated
+            </span>
+            <button type="button" onClick={() => setPalette(true)} className="hidden lg:inline-flex items-center gap-2 h-10 w-[230px] rounded-xl border border-[#E2DED5] bg-white px-3 text-[14px] text-neutral-500 hover:border-brand">
+              <Search className="h-4 w-4" /> <span className="flex-1 text-start">Ask Flaire</span>
+              <kbd className="rounded bg-[#F1EEE8] px-1.5 py-0.5 text-[11px] font-semibold text-neutral-600">⌘K</kbd>
+            </button>
+            <NavLink to="/connections" className="btn-primary h-11 px-5 rounded-xl">
+              <Plus className="h-4 w-4" /> Connect AI
+            </NavLink>
           </header>
 
-          <main className="flex-1 w-full max-w-[1100px] mx-auto px-4 py-5 md:px-8 md:py-8 pb-[calc(9rem+env(safe-area-inset-bottom))] md:pb-10">
+          {/* Phone top bar for pages that are not Home or Activity */}
+          {!immersive && (
+            <header className="md:hidden sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-line px-4 h-14 flex items-center justify-between gap-2 pt-[env(safe-area-inset-top)]">
+              <img src="/flaire-logo.png" alt="Flaire" className="h-6 w-auto shrink-0" />
+              <button onClick={doLogout} className="text-[14px] font-semibold text-neutral-600">{t('auth.signOut')}</button>
+            </header>
+          )}
+
+          <main className="flex-1 w-full max-w-[1760px] mx-auto px-4 py-5 md:px-10 md:pt-3 md:pb-10 pb-[calc(9rem+env(safe-area-inset-bottom))]">
             <Outlet />
           </main>
         </div>
       </div>
 
       <AskFlaire />
+      <CommandPalette open={palette} onClose={() => setPalette(false)} />
+      {killModal}
       {/* Phone bottom tab bar */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-line grid grid-cols-3 h-[68px] pb-[env(safe-area-inset-bottom)]">
-        {phoneTabs.map((n) => (
+        {PHONE_TABS.map((n) => (
           <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => `relative flex items-center justify-center text-[15px] font-semibold ${isActive ? 'text-brand' : 'text-neutral-600'}`}>
             {({ isActive }) => (
               <>

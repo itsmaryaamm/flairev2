@@ -20,7 +20,7 @@ function Step({ n, icon, children }: { n: number; icon: React.ReactNode; childre
 }
 
 /** Desktop: a QR code that opens this same app on a phone. Phone (not installed): the Add to Home Screen steps. Dismissible. */
-export function GetTheApp() {
+export function GetTheApp({ always = false }: { always?: boolean } = {}) {
   const { phone } = useView()
   const [hidden, setHidden] = useState(() => {
     try {
@@ -37,7 +37,7 @@ export function GetTheApp() {
       .catch(() => undefined)
   }, [phone])
 
-  if (hidden || (phone && standalone())) return null
+  if ((hidden && !always) || (phone && standalone())) return null
   const dismiss = () => {
     try {
       localStorage.setItem(KEY, '1')

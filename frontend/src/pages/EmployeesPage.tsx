@@ -13,6 +13,7 @@ import { ErrorNote } from '../components/ErrorNote'
 import { EmployeeCard } from '../components/employees/EmployeeCard'
 import { useLithicConfigured } from '../components/employees/CardTile'
 import { useT } from '../lib/i18n'
+import { WorkforceTable } from '../components/employees/WorkforceTable'
 
 export default function EmployeesPage() {
   const t = useT()
@@ -43,11 +44,14 @@ export default function EmployeesPage() {
           <EmptyState icon={<Bot className="h-5 w-5" />} title={t('employees.noneYet')} description={t('employees.noneYetDesc')} action={newButton} />
         </div>
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <>
+        <div className="hidden md:block"><WorkforceTable agents={list} /></div>
+        <div className="md:hidden grid sm:grid-cols-2 gap-4">
           {list.map((a) => (
             <EmployeeCard key={a.id} agent={a} lithicConfigured={lithicConfigured} onChanged={refresh} />
           ))}
         </div>
+        </>
       )}
 
       <Modal open={createOpen} onClose={() => setCreateOpen(false)} title={t('employees.new')} size="lg">

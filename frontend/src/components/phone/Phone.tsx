@@ -135,7 +135,7 @@ export function PhoneRecent({ items }: { items: PurchaseRequest[] }) {
     <section>
       <div className="flex items-center justify-between mb-1">
         <h2 className="text-[15px] font-bold">{t('phone.recent')}</h2>
-        <Link to="/activity" className="text-[13px] font-semibold text-brand">{t('common.seeAll')}</Link>
+        <Link to="/spending" className="text-[13px] font-semibold text-brand">{t('common.seeAll')}</Link>
       </div>
       {items.length === 0 ? <div className="py-6 text-center text-sm text-neutral-500">{t('home.noRequestsYet')}</div> : <PhoneRows items={items} />}
     </section>

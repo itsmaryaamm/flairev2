@@ -12,7 +12,7 @@ export function RecentActivity({ items }: { items: PurchaseRequest[] }) {
     <section>
       <div className="flex items-center justify-between px-1 mb-2.5">
         <h2 className="text-sm font-bold">{t('home.recentActivity')}</h2>
-        <Link to="/activity" className="text-xs font-semibold text-brand hover:underline">
+        <Link to="/spending" className="text-xs font-semibold text-brand hover:underline">
           {t('common.seeAll')}
         </Link>
       </div>

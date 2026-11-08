@@ -4,12 +4,12 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['"Instrument Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        sans: ['"IBM Plex Sans"', '"Instrument Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         display: ['"Bricolage Grotesque"', '"Instrument Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       colors: {
-        canvas: '#F7F6FA',
+        canvas: '#F7F5F1',
         ink: '#16112B',
         line: {
           DEFAULT: '#E3DFEE',

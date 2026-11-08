@@ -91,6 +91,42 @@ def me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     return {"user": user_out(user), "company": company_out(c) if c else None, "needs_onboarding": c is None}
 
 
+class ProfilePatch(BaseModel):
+    full_name: str | None = Field(default=None, min_length=1, max_length=120)
+    avatar: str | None = None
+    remove_avatar: bool = False
+
+
+_AVATAR_PREFIXES = ("data:image/jpeg;base64,", "data:image/png;base64,", "data:image/webp;base64,")
+
+
+@router.patch("/auth/me", tags=["auth"])
+def patch_me(body: ProfilePatch, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """The signed-in person edits their own name and profile photo. Nothing else (role, email, 2FA) can change here."""
+    changed = []
+    if body.full_name is not None:
+        name = " ".join(body.full_name.split())
+        if not name:
+            raise HTTPException(422, "Name cannot be empty")
+        if name != user.full_name:
+            user.full_name = name
+            changed.append("name")
+    if body.remove_avatar:
+        if user.avatar:
+            user.avatar = None
+            changed.append("photo")
+    elif body.avatar is not None:
+        if not body.avatar.startswith(_AVATAR_PREFIXES) or len(body.avatar) > 200_000:
+            raise HTTPException(422, "Use a JPEG, PNG or WebP photo under about 150 KB")
+        user.avatar = body.avatar
+        changed.append("photo")
+    if changed and user.company_id:
+        audit.record(db, user.company_id, actor_type="user", actor_id=user.id, actor_name=user.full_name, event="user.profile_updated", details={"changed": changed})
+    db.commit()
+    c = company_of(user, db) if user.company_id else None
+    return {"user": user_out(user), "company": company_out(c) if c else None, "needs_onboarding": c is None}
+
+
 @router.get("/auth/config", tags=["auth"])
 def auth_config():
     from app.core import supabase as sb

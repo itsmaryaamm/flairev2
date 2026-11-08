@@ -56,7 +56,7 @@ export function MonthCard({ spent, budget, fees, parts = [] }: { spent: number; 
       </div>
       <div className="mt-4 pt-3 border-t border-line flex items-center justify-between text-xs">
         <span className="text-neutral-500">{t('home.feeThisMonth')}</span>
-        <Link to="/activity" className="font-semibold tnum text-ink hover:text-brand">
+        <Link to="/spending" className="font-semibold tnum text-ink hover:text-brand">
           {sar(fees?.fees ?? 0)}
           {fees && fees.fee_rate_bps > 0 && <span className="text-neutral-400 font-normal"> ({(fees.fee_rate_bps / 100).toFixed(2)}%)</span>}
         </Link>

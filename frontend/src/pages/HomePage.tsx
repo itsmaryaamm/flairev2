@@ -139,6 +139,7 @@ export default function HomePage() {
           onDecideHandled={clearDecide}
           title={t('phone.waiting')}
           emptyView={<PhoneAllClear pending={0} />}
+          hideHeader={needsItems.length === 0}
         />
         <PhoneSpend spent={totals?.spent_this_period ?? 0} budget={totals?.budget_total ?? 0} parts={(summary.data?.agents ?? []).map((a) => ({ id: a.id, name: a.name, spent: a.spent_this_period }))} />
         <PhoneRecent items={recent} />
