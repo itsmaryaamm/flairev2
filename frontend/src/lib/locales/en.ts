@@ -51,8 +51,8 @@ export const en: Record<string, string> = {
 
   // ---- statuses
   'status.unknown': 'Unknown',
-  'status.completed': 'Paid',
-  'status.settled': 'Paid',
+  'status.completed': 'Sandbox authorized',
+  'status.settled': 'Sandbox authorized',
   'status.authorized': 'Approved',
   'status.approved': 'Approved',
   'status.pending_approval': 'Waiting for you',
@@ -337,7 +337,7 @@ export const en: Record<string, string> = {
   'activity.feesThisMonth': 'Fees this month: {amount}',
   'activity.exportCsv': 'Export CSV',
   'activity.all': 'All',
-  'activity.paid': 'Paid',
+  'activity.paid': 'Authorized',
   'activity.waiting': 'Waiting',
   'activity.blocked': 'Blocked',
   'activity.filterByEmployee': 'Filter by employee',

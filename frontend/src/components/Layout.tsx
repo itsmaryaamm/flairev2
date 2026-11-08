@@ -10,6 +10,7 @@ import type { PurchaseRequest } from '../types'
 import { KillSwitchBanner } from './KillSwitchBanner'
 import { useKillSwitch } from './KillSwitchPanel'
 import { NotificationsBell } from './NotificationsBell'
+import { AskFlaire } from './AskFlaire'
 
 type NavItem = { to: string; key: string; icon: typeof Home; end?: boolean }
 
@@ -121,6 +122,10 @@ export function Layout() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <div role="status" className="bg-[#F1E8FF] text-ink text-[13px] font-medium flex items-center justify-center gap-2.5 min-h-9 px-3 py-1 text-center">
+        <b className="rounded-[4px] bg-[#FBBF24] text-[#3B2A00] px-2 py-0.5 text-[11px]">Sandbox</b>
+        <span>Simulated payments only. No real money moves.</span>
+      </div>
       <KillSwitchBanner />
       <div className="flex flex-1">
         {/* Desktop sidebar */}
@@ -184,6 +189,7 @@ export function Layout() {
         </div>
       </div>
 
+      <AskFlaire />
       {/* Phone bottom tab bar */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur border-t border-line grid grid-cols-3 h-16 pb-[env(safe-area-inset-bottom)]">
         {phoneTabs.map((n) => (

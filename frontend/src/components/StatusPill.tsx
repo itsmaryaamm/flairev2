@@ -44,9 +44,9 @@ export function toneFor(status: string | null | undefined): PillTone {
 }
 
 const LABELS: Record<string, string> = {
-  completed: 'Paid',
-  settled: 'Paid',
-  authorized: 'Approved',
+  completed: 'Sandbox authorized',
+  settled: 'Sandbox authorized',
+  authorized: 'Authorized',
   approved: 'Approved',
   pending_approval: 'Waiting for you',
   pending: 'Waiting for you',

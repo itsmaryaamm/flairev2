@@ -10,7 +10,6 @@ import { ErrorNote } from '../components/ErrorNote'
 import { GettingStartedCard } from '../components/dashboard/GettingStartedCard'
 import { NeedsYou } from '../components/home/NeedsYou'
 import { MonthCard } from '../components/home/MonthCard'
-import { AssistantPanel } from '../components/home/AssistantPanel'
 import { RecentActivity } from '../components/home/RecentActivity'
 import { MyViewPanel } from '../components/home/MyViewPanel'
 import { AdminBlock } from '../components/home/AdminBlock'
@@ -128,7 +127,7 @@ export default function HomePage() {
         {header}
         {error && <ErrorNote message={error} />}
         {needsYou}
-        <MonthCard spent={totals?.spent_this_period ?? 0} budget={totals?.budget_total ?? 0} fees={fees.data} />
+        <MonthCard spent={totals?.spent_this_period ?? 0} budget={totals?.budget_total ?? 0} fees={fees.data} parts={(summary.data?.agents ?? []).map((a) => ({ name: a.name, spent: a.spent_this_period }))} />
         <RecentActivity items={recent} />
       </div>
     )
@@ -142,15 +141,16 @@ export default function HomePage() {
       {error && <ErrorNote message={error} />}
       {admin && adminView.error && !adminView.data && <ErrorNote message={adminView.error} />}
 
-      <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.85fr)] gap-5 items-start">
+      <div className="grid lg:grid-cols-2 gap-5 items-start">
         <div className="space-y-5 min-w-0">
           {needsYou}
           {!admin && myView.data && <MyViewPanel view={myView.data} />}
           {admin && adminView.data && <AdminBlock view={adminView.data} />}
-          <MonthCard spent={totals?.spent_this_period ?? 0} budget={totals?.budget_total ?? 0} fees={fees.data} />
-          {admin && <RecentActivity items={recent} />}
         </div>
-        <AssistantPanel onDecided={onDecided} />
+        <div className="space-y-5 min-w-0">
+          <MonthCard spent={totals?.spent_this_period ?? 0} budget={totals?.budget_total ?? 0} fees={fees.data} parts={(summary.data?.agents ?? []).map((a) => ({ name: a.name, spent: a.spent_this_period }))} />
+          <RecentActivity items={recent} />
+        </div>
       </div>
     </div>
   )
