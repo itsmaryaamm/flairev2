@@ -89,7 +89,7 @@ export function NeedsYou({
             const reason = chainText ?? lastReason(r)
             const second = !chainText && r.needs_second_approver && r.approvals.length > 0
             return (
-              <div key={r.id} className="card-lg p-4">
+              <div key={r.id} className="ticket p-4" style={{ ['--tear' as string]: second || killSwitch ? '70%' : '66%' }}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="text-xs text-neutral-500 truncate">
@@ -97,7 +97,7 @@ export function NeedsYou({
                     </div>
                     <div className="text-base font-bold truncate mt-0.5">{r.merchant}</div>
                   </div>
-                  <div className="text-[22px] leading-none font-extrabold tracking-tightest tnum whitespace-nowrap">{sar(r.amount)}</div>
+                  <div className="font-display text-[26px] leading-none font-bold tracking-tightest tnum whitespace-nowrap">{sar(r.amount)}</div>
                 </div>
                 {reason && <div className="mt-2.5 text-xs text-neutral-600 leading-snug">{reason}</div>}
                 {second && (
@@ -111,11 +111,12 @@ export function NeedsYou({
                     <Lock className="h-4 w-4 shrink-0" /> {t('home.killSwitchOnLift')}
                   </div>
                 )}
+                <div className="ticket-tear mt-4" />
                 <div className="mt-3.5 grid grid-cols-2 gap-2.5">
                   <button
                     type="button"
                     onClick={() => setPicked({ req: r, action: 'reject' })}
-                    className="h-11 rounded-pill border border-line-strong bg-white text-ink text-sm font-bold inline-flex items-center justify-center gap-1.5 hover:bg-lavender"
+                    className="h-11 rounded-pill border border-[#CDBBF0] bg-white text-ink text-sm font-bold inline-flex items-center justify-center gap-1.5 hover:bg-lavender"
                   >
                     <X className="h-4 w-4" /> {t('common.decline')}
                   </button>
@@ -123,7 +124,7 @@ export function NeedsYou({
                     type="button"
                     onClick={() => setPicked({ req: r, action: 'approve' })}
                     disabled={killSwitch}
-                    className="h-11 rounded-pill bg-success text-white text-sm font-bold inline-flex items-center justify-center gap-1.5 hover:bg-[#0C8A45] disabled:opacity-50"
+                    className="h-11 rounded-pill bg-brand text-white text-sm font-bold inline-flex items-center justify-center gap-1.5 hover:bg-brand-dark shadow-primary disabled:opacity-50"
                   >
                     <Check className="h-4 w-4" /> {t('common.approve')}
                   </button>

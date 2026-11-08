@@ -4,15 +4,16 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['"Plus Jakarta Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        sans: ['"Instrument Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        display: ['"Bricolage Grotesque"', '"Instrument Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       colors: {
-        canvas: '#FBFAFD',
-        ink: '#1A0B33',
+        canvas: '#FFFFFF',
+        ink: '#16112B',
         line: {
-          DEFAULT: '#E8E3F0',
-          strong: '#E0D8EC',
+          DEFAULT: '#E3DFEE',
+          strong: '#D6D0E6',
         },
         brand: {
           DEFAULT: '#7B2FF2',
@@ -77,17 +78,17 @@ export default {
         },
       },
       borderRadius: {
-        card: '18px',
-        'card-lg': '20px',
+        card: '14px',
+        'card-lg': '18px',
         input: '10px',
         pill: '999px',
       },
       boxShadow: {
         primary: '0 12px 28px -14px rgba(123,47,242,.8)',
-        card: '0 1px 2px rgba(26,11,51,.04)',
+        card: '0 1px 0 rgba(22,17,43,.03), 0 18px 40px -28px rgba(22,17,43,.22)',
       },
       letterSpacing: {
-        tightest: '-0.03em',
+        tightest: '-0.035em',
       },
     },
   },

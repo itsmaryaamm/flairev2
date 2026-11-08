@@ -4,13 +4,13 @@
 
 @layer base {
   html {
-    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+    font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
   /* Arabic: a Naskh-style UI face; Latin digits and code keep Plus Jakarta / JetBrains Mono. */
   html[lang='ar'] {
-    font-family: 'IBM Plex Sans Arabic', 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+    font-family: 'IBM Plex Sans Arabic', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
   }
   html[lang='ar'] h1,
   html[lang='ar'] h2,
@@ -27,7 +27,19 @@
   h1,
   h2,
   h3 {
-    @apply tracking-tightest;
+    @apply tracking-tightest font-display;
+  }
+  html[lang='ar'] h1,
+  html[lang='ar'] h2,
+  html[lang='ar'] h3 {
+    font-family: 'IBM Plex Sans Arabic', sans-serif;
+  }
+  :focus-visible {
+    outline: 3px solid #7B2FF2;
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition-duration: .01ms !important; animation-duration: .01ms !important; }
   }
   .tnum {
     font-variant-numeric: tabular-nums;
@@ -75,6 +87,30 @@
     @apply px-4 py-3 text-sm align-middle;
   }
   .kpi-value {
-    @apply text-[22px] sm:text-[28px] leading-none font-bold tracking-tightest tnum whitespace-nowrap;
+    @apply font-display text-[22px] sm:text-[28px] leading-none font-bold tracking-tightest tnum whitespace-nowrap;
   }
+}
+
+@layer components {
+  /* The request ticket: a lavender stub with notches and a dashed tear line. */
+  .ticket {
+    position: relative;
+    background: #F1E8FF;
+    border-radius: 18px;
+    color: #16112B;
+    -webkit-mask:
+      radial-gradient(circle 11px at 0 var(--tear, 62%), #0000 97%, #000) left / 51% 100% no-repeat,
+      radial-gradient(circle 11px at 100% var(--tear, 62%), #0000 97%, #000) right / 51% 100% no-repeat;
+    mask:
+      radial-gradient(circle 11px at 0 var(--tear, 62%), #0000 97%, #000) left / 51% 100% no-repeat,
+      radial-gradient(circle 11px at 100% var(--tear, 62%), #0000 97%, #000) right / 51% 100% no-repeat;
+  }
+  .ticket-tear {
+    border-top: 2px dashed rgba(123, 47, 242, 0.38);
+    margin: 0 -2px;
+  }
+  .stamp {
+    @apply inline-block rounded-[4px] px-2 py-0.5 text-[12px] font-semibold;
+  }
+  .btn-secondary.on-ticket { @apply bg-white border-[#CDBBF0]; }
 }
