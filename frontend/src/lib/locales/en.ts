@@ -85,11 +85,14 @@ export const en: Record<string, string> = {
   'stepRole.admin': 'admin',
   'stepRole.owner': 'owner',
   'agentRole.marketing': 'Marketing',
+  'agentRole.procurement': 'Procurement',
+  'agentRole.finance': 'Finance',
+  'agentRole.sales': 'Sales',
+  'agentRole.hr': 'People',
+  'agentRole.support': 'Support',
+  'agentRole.other': 'General',
   'agentRole.operations': 'Operations',
   'agentRole.engineering': 'Engineering',
-  'agentRole.sales': 'Sales',
-  'agentRole.finance': 'Finance',
-  'agentRole.support': 'Support',
   'agentRole.general': 'General',
 
   // ---- approval chain status

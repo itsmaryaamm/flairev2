@@ -99,7 +99,7 @@ export function NeedsYou({
                   </div>
                   <div className="font-display text-[26px] leading-none font-bold tracking-tightest tnum whitespace-nowrap">{sar(r.amount)}</div>
                 </div>
-                {reason && <div className="mt-2.5 text-xs text-neutral-600 leading-snug">{reason}</div>}
+                {reason && <div className="mt-2.5 text-xs text-neutral-600 leading-snug">{reason.replace(/(\d)\.00\b/g, '$1')}</div>}
                 {second && (
                   <div className="mt-3 flex items-start gap-2 rounded-input border border-amber-300 bg-warn-tint px-3 py-2 text-xs text-warn">
                     <Lock className="h-4 w-4 shrink-0 mt-px" />

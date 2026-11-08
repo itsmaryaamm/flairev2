@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ShieldCheck, Store } from 'lucide-react'
 import { api, errorMessage } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
 import { useToast } from '../../lib/toast'
@@ -44,7 +43,6 @@ export function SupplierPolicyCard() {
   return (
     <section id="suppliers" className="card-lg p-5 scroll-mt-20">
       <div className="flex items-center gap-2">
-        <Store className="h-4 w-4 text-brand" />
         <h3 className="font-bold">{t('settings.supplierPolicy')}</h3>
       </div>
       <p className="text-xs text-neutral-500 mt-0.5 mb-3">{t('settings.supplierHint')}</p>
@@ -87,7 +85,6 @@ export function ApprovalRulesCard() {
   return (
     <section id="approvals" className="card-lg p-5 scroll-mt-20">
       <div className="flex items-center gap-2">
-        <ShieldCheck className="h-4 w-4 text-brand" />
         <h3 className="font-bold">{t('settings.approvalRules')}</h3>
       </div>
       <p className="text-xs text-neutral-500 mt-0.5 mb-3">{t('settings.approvalRulesHint')}</p>

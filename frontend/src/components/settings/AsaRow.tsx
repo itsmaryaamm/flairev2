@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { Zap } from 'lucide-react'
 import { api, errorMessage } from '../../lib/api'
 import { useFetch } from '../../lib/useFetch'
 import { useToast } from '../../lib/toast'
@@ -38,7 +37,6 @@ export function AsaRow() {
   return (
     <div className="mt-4 pt-4 border-t border-line">
       <div className="flex flex-wrap items-center gap-2">
-        <Zap className="h-4 w-4 text-brand" />
         <h4 className="text-sm font-semibold">{t('settings.realtimeAuth')}</h4>
         {s ? (
           s.asa_enrolled ? (

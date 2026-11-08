@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { GitBranch, Pencil, Plus, Trash2, X } from 'lucide-react'
+import { Pencil, Plus, Trash2, X } from 'lucide-react'
 import { api, errorMessage } from '../../lib/api'
 import { useT } from '../../lib/i18n'
 import { useToast } from '../../lib/toast'
@@ -183,7 +183,6 @@ export function ApprovalChainsCard({ rules, departments, canManage, onChanged }:
   return (
     <section id="chains" className="card-lg p-5 scroll-mt-20">
       <div className="flex items-center gap-2 mb-1">
-        <GitBranch className="h-4 w-4 text-brand" />
         <h3 className="font-bold">{t('chains.title')}</h3>
         {canManage && (
           <button

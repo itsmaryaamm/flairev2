@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { ChevronRight, Users } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 import { PageHeader } from '../components/PageHeader'
 import { CompanyCard } from '../components/settings/CompanyCard'
 import { ConnectClaudeCard } from '../components/settings/ConnectClaudeCard'
@@ -29,7 +29,6 @@ export default function SettingsPage() {
       <div className="space-y-5">
         {/* Phones have three tabs; Employees lives here. */}
         <Link to="/employees" className="md:hidden card-lg px-5 py-4 flex items-center gap-3 hover:bg-lavender">
-          <Users className="h-4 w-4 text-brand" />
           <span className="font-bold flex-1">{t('nav.employees')}</span>
           <ChevronRight className="h-4 w-4 text-neutral-400 rtl-flip" />
         </Link>

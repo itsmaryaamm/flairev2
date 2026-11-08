@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ArrowRight, Check, GitCompare, History, ScrollText, X } from 'lucide-react'
+import { ArrowRight, Check, X } from 'lucide-react'
 import { api, errorMessage } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { useFetch, formatDate } from '../lib/useFetch'
@@ -217,7 +217,6 @@ function VersionHistory({ versions }: { versions: PolicyVersion[] }) {
   return (
     <section id="versions" className="card-lg p-5 scroll-mt-20">
       <div className="flex items-center gap-2 mb-1">
-        <History className="h-4 w-4 text-brand" />
         <h3 className="font-bold">{t('policy.versionHistory')}</h3>
       </div>
       <p className="text-xs text-neutral-500 mb-3">{t('policy.versionHint')}</p>
@@ -255,7 +254,6 @@ function VersionHistory({ versions }: { versions: PolicyVersion[] }) {
       {picked.length === 2 && (
         <div className="mt-4 pt-4 border-t border-line">
           <div className="flex items-center gap-2 mb-2">
-            <GitCompare className="h-4 w-4 text-brand" />
             <h4 className="text-sm font-bold">{diff ? t('policy.compare', { a: diff.from.version, b: diff.to.version }) : t('policy.comparing')}</h4>
             {busy && <Spinner className="h-3.5 w-3.5" />}
           </div>
@@ -311,7 +309,6 @@ export default function PolicyPage() {
       <div className="space-y-5">
         <section id="pending" className="scroll-mt-20">
           <div className="flex items-center gap-2 px-1 mb-2.5">
-            <ScrollText className="h-4 w-4 text-brand" />
             <h2 className="text-sm font-bold">{t('policy.pendingChanges')}</h2>
             {pending.length > 0 && (
               <span className="inline-flex min-w-[22px] h-[22px] items-center justify-center rounded-pill bg-brand px-1.5 text-[11px] font-bold text-white tnum">{pending.length}</span>

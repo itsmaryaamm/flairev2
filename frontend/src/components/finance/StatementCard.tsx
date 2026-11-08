@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Download, FileText } from 'lucide-react'
+import { Download } from 'lucide-react'
 import { downloadFile, errorMessage } from '../../lib/api'
 import { useT } from '../../lib/i18n'
 import { useToast } from '../../lib/toast'
@@ -55,7 +55,6 @@ export function StatementCard({ statement, loading, error, periodLabel }: { stat
   return (
     <section id="statement" className="card-lg p-5 scroll-mt-20">
       <div className="flex flex-wrap items-center gap-2 mb-1">
-        <FileText className="h-4 w-4 text-brand" />
         <h3 className="font-bold">{t('finance.statement')}</h3>
         <span className="text-sm text-neutral-600">{periodLabel}</span>
         {statement?.closed && <StatusPill tone="neutral">{t('finance.closedBadge')}</StatusPill>}

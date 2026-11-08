@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { Mail, Trash2 } from 'lucide-react'
+import { Trash2 } from 'lucide-react'
 import { api, errorMessage } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
 import { useT } from '../../lib/i18n'
@@ -70,7 +70,6 @@ export function InviteCard({ invites, departments, onChanged }: { invites: Invit
   return (
     <section id="invite" className="card-lg p-5 scroll-mt-20">
       <div className="flex items-center gap-2 mb-1">
-        <Mail className="h-4 w-4 text-brand" />
         <h3 className="font-bold">{t('team.invite')}</h3>
       </div>
       <p className="text-xs text-neutral-500 mb-3">{t('team.inviteHint')}</p>

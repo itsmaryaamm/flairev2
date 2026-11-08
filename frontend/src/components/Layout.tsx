@@ -124,7 +124,7 @@ export function Layout() {
     <div className="min-h-screen flex flex-col">
       <div role="status" className="bg-[#F1E8FF] text-ink text-[13px] font-medium flex items-center justify-center gap-2.5 min-h-9 px-3 py-1 text-center">
         <b className="rounded-[4px] bg-[#FBBF24] text-[#3B2A00] px-2 py-0.5 text-[11px]">Sandbox</b>
-        <span>Simulated payments only. No real money moves.</span>
+        <span className="md:hidden">No real money moves.</span><span className="hidden md:inline">Simulated payments only. No real money moves.</span>
       </div>
       <KillSwitchBanner />
       <div className="flex flex-1">

@@ -20,7 +20,7 @@ export function AskFlaire() {
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Ask Flaire"
-          className="fixed z-40 end-4 md:end-7 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] md:bottom-7 inline-flex items-center gap-2 h-12 md:h-14 px-5 rounded-pill bg-brand text-white font-semibold shadow-[0_14px_34px_rgba(123,47,242,.45)] hover:bg-brand-dark transition-colors"
+          className="fixed z-40 end-4 md:end-7 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] md:bottom-7 inline-flex items-center gap-2 h-11 md:h-12 px-4 rounded-full bg-ink text-white text-sm font-semibold shadow-[0_8px_24px_rgba(22,17,43,.28)] hover:bg-brand transition-colors"
         >
           <MessageCircle className="h-5 w-5" />
           Ask Flaire

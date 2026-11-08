@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Ban, Building2, CheckCircle2, Shield, Trash2, Users } from 'lucide-react'
+import { Ban, Building2, CheckCircle2, Shield, Trash2 } from 'lucide-react'
 import { api, errorMessage } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
 import { useT } from '../../lib/i18n'
@@ -190,7 +190,6 @@ export function MembersCard({ members, departments, loading, error, onChanged }:
   return (
     <section id="members" className="card-lg p-5 scroll-mt-20">
       <div className="flex items-center gap-2 mb-1">
-        <Users className="h-4 w-4 text-brand" />
         <h3 className="font-bold">{t('team.members')}</h3>
         <span className="text-xs text-neutral-500 tnum">{members.length}</span>
       </div>
@@ -237,7 +236,7 @@ export function MembersCard({ members, departments, loading, error, onChanged }:
                     </td>
                     <td className="td text-xs">
                       <div>{m.department_name ?? <span className="text-neutral-400">{t('team.noPrimary')}</span>}</div>
-                      {scope.length > 0 && <div className="text-neutral-500 truncate max-w-[220px]">{scope.join(', ')}</div>}
+                      {scope.filter((x) => x !== m.department_name).length > 0 && <div className="text-neutral-500 truncate max-w-[220px]">{scope.filter((x) => x !== m.department_name).join(', ')}</div>}
                     </td>
                     <td className="td">
                       {m.status === 'disabled' ? <StatusPill tone="red">{t('team.disabled')}</StatusPill> : <StatusPill tone="green" dot>{t('team.active')}</StatusPill>}

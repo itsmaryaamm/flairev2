@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { CreditCard, Trash2 } from 'lucide-react'
+import { Trash2 } from 'lucide-react'
 import { api, errorMessage } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
 import { useToast } from '../../lib/toast'
@@ -47,7 +47,6 @@ export function PaymentsCard() {
   return (
     <section id="payments" className="card-lg p-5 scroll-mt-20">
       <div className="flex items-center gap-2">
-        <CreditCard className="h-4 w-4 text-brand" />
         <h3 className="font-bold">{t('settings.payments')}</h3>
       </div>
       <div className="mt-2 flex items-center gap-2 text-sm">

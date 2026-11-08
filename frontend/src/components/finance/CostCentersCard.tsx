@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Ban, Pencil, Plus, Tags } from 'lucide-react'
+import { Ban, Pencil, Plus } from 'lucide-react'
 import { api, errorMessage } from '../../lib/api'
 import { useT } from '../../lib/i18n'
 import { useToast } from '../../lib/toast'
@@ -120,7 +120,6 @@ export function CostCentersCard({ items, loading, canManage, onChanged }: { item
   return (
     <section id="cost-centers" className="card-lg p-5 scroll-mt-20">
       <div className="flex items-center gap-2 mb-1">
-        <Tags className="h-4 w-4 text-brand" />
         <h3 className="font-bold">{t('finance.costCenters')}</h3>
         {canManage && (
           <button

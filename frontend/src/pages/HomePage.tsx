@@ -106,7 +106,7 @@ export default function HomePage() {
         <h1 className="text-xl md:text-2xl font-extrabold tracking-tightest truncate">{company?.name ?? 'Flaire'}</h1>
         {company?.kill_switch && company.kill_switch_reason && <div className="text-xs text-danger truncate mt-0.5">{company.kill_switch_reason}</div>}
       </div>
-      <KillSwitchPill />
+      <KillSwitchPill className="md:hidden" />
     </div>
   )
 

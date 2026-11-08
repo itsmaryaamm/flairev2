@@ -10,13 +10,13 @@ export function EmployeeCard({ agent: a, lithicConfigured, onChanged }: { agent:
   const t = useT()
   const active = a.status === 'active'
   return (
-    <div className="card-lg p-4 flex flex-col gap-3.5">
+    <div className="card-lg p-5 flex flex-col gap-4">
       <Link to={`/employees/${a.id}`} className="flex items-start gap-3 group">
-        <div className="rounded-xl bg-brand-light text-brand p-2.5 shrink-0">
+        <div className="rounded-lg bg-brand-light text-brand p-2 shrink-0">
           <Bot className="h-5 w-5" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="font-bold group-hover:text-brand truncate">{a.name}</div>
+          <div className="font-semibold group-hover:text-brand truncate">{a.name}</div>
           <div className="text-xs text-neutral-500 truncate flex items-center gap-1.5">
             <span className={`inline-block h-2 w-2 rounded-full ${active ? 'bg-success' : 'bg-amber-500'}`} aria-label={active ? t('status.active') : t('status.paused')} />
             {t(`agentRole.${a.role}`)}
@@ -31,11 +31,11 @@ export function EmployeeCard({ agent: a, lithicConfigured, onChanged }: { agent:
       <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
         <div>
           <dt className="text-neutral-500">{t('employees.spentThisMonth')}</dt>
-          <dd className="font-semibold tnum text-sm">{sar(a.spent_this_period)}</dd>
+          <dd className="font-display font-semibold tnum text-lg tracking-tightest">{sar(a.spent_this_period)}</dd>
         </div>
         <div>
           <dt className="text-neutral-500">{t('employees.humanApprovalFrom')}</dt>
-          <dd className="font-semibold tnum text-sm">{sar(a.approval_threshold)}</dd>
+          <dd className="font-display font-semibold tnum text-lg tracking-tightest">{sar(a.approval_threshold)}</dd>
         </div>
       </dl>
 

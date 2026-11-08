@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Download, Receipt } from 'lucide-react'
+import { Download } from 'lucide-react'
 import { api, downloadFile, errorMessage } from '../../lib/api'
 import { useT } from '../../lib/i18n'
 import { useToast } from '../../lib/toast'
@@ -55,7 +55,6 @@ export function FeeInvoicesCard({
   return (
     <section id="fee-invoices" className="card-lg p-5 scroll-mt-20">
       <div className="flex flex-wrap items-center gap-2 mb-1">
-        <Receipt className="h-4 w-4 text-brand" />
         <h3 className="font-bold">{t('finance.feeInvoices')}</h3>
         {canIssue && (
           <button className="btn-secondary text-xs ms-auto" onClick={issue} disabled={issuing || already}>

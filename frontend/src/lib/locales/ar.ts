@@ -85,11 +85,14 @@ export const ar: Record<string, string> = {
   'stepRole.admin': 'مدير نظام',
   'stepRole.owner': 'مالك',
   'agentRole.marketing': 'التسويق',
+  'agentRole.procurement': 'المشتريات',
+  'agentRole.finance': 'المالية',
+  'agentRole.sales': 'المبيعات',
+  'agentRole.hr': 'الموارد البشرية',
+  'agentRole.support': 'الدعم',
+  'agentRole.other': 'عام',
   'agentRole.operations': 'العمليات',
   'agentRole.engineering': 'الهندسة',
-  'agentRole.sales': 'المبيعات',
-  'agentRole.finance': 'المالية',
-  'agentRole.support': 'الدعم',
   'agentRole.general': 'عام',
 
   // ---- approval chain status

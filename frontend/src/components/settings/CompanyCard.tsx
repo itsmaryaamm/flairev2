@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { Building2 } from 'lucide-react'
 import { api, errorMessage } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
 import { useToast } from '../../lib/toast'
@@ -35,7 +34,6 @@ export function CompanyCard() {
   return (
     <section id="company" className="card-lg p-5 scroll-mt-20">
       <div className="flex items-center gap-2">
-        <Building2 className="h-4 w-4 text-brand" />
         <h3 className="font-bold">{t('settings.company')}</h3>
       </div>
       <form onSubmit={save} className="mt-3 flex flex-col sm:flex-row gap-2">

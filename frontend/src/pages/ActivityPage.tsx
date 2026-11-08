@@ -119,7 +119,7 @@ export default function ActivityPage() {
             </option>
           ))}
         </select>
-        <span className="font-mono text-xs text-neutral-500 ms-auto tnum">{t('activity.nRequests', { n: list.length })}</span>
+        <span className="text-xs text-neutral-500 ms-auto tnum">{t('activity.nRequests', { n: list.length })}</span>
       </div>
 
       {reqs.loading && !reqs.data ? (

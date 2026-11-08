@@ -127,11 +127,12 @@ export function ActivityRow({ request: r, transaction, onChanged }: { request: P
           </div>
           {accountable && <div className="text-[11px] text-neutral-500 truncate mt-0.5">{accountable}</div>}
         </div>
-        <div className="text-end">
+        <div className="text-end flex flex-col items-end">
           <div className="text-sm font-semibold tnum whitespace-nowrap">{sar(r.amount)}</div>
           <ChargedLine tx={transaction} />
+          <StatusPill status={r.status} className="sm:hidden mt-0.5" />
         </div>
-        <StatusPill status={r.status} />
+        <StatusPill status={r.status} className="hidden sm:inline-flex min-w-[130px]" />
       </button>
       {open && (
         <div className="px-4 pb-4 pt-1 space-y-3 bg-lavender/40 border-t border-line">

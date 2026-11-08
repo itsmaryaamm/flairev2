@@ -1,4 +1,3 @@
-import { Building2, CheckCircle2, UserCheck } from 'lucide-react'
 import { useT } from '../../lib/i18n'
 import { formatDate } from '../../lib/useFetch'
 import { sar } from '../../lib/money'
@@ -19,7 +18,6 @@ export function MyViewPanel({ view }: { view: MyView }) {
     <section className="card-lg p-4 space-y-4">
       <div>
         <div className="flex items-center gap-2 mb-1.5">
-          <Building2 className="h-4 w-4 text-brand" />
           <h3 className="text-sm font-bold">{t('my.departments')}</h3>
           <span className="text-xs text-neutral-500">{t(`role.${view.my_role}`)}</span>
         </div>
@@ -38,7 +36,6 @@ export function MyViewPanel({ view }: { view: MyView }) {
 
       <div className="pt-3 border-t border-line">
         <div className="flex items-center gap-2 mb-1.5">
-          <UserCheck className="h-4 w-4 text-brand" />
           <h3 className="text-sm font-bold">{t('my.delegations')}</h3>
         </div>
         {view.delegations_active_for_me.length === 0 ? (
@@ -57,7 +54,6 @@ export function MyViewPanel({ view }: { view: MyView }) {
 
       <div className="pt-3 border-t border-line">
         <div className="flex items-center gap-2 mb-1.5">
-          <CheckCircle2 className="h-4 w-4 text-brand" />
           <h3 className="text-sm font-bold">{t('my.recentApprovals')}</h3>
         </div>
         {view.my_recent_approvals.length === 0 ? (

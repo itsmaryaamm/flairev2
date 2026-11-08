@@ -73,7 +73,7 @@ export function IssueCardButton({ agent, onIssued, onBusy, className = '' }: { a
 /** The honest one-line state of the card. */
 export function CardStateText({ state, last4 }: { state: CardState; last4?: string }) {
   const t = useT()
-  if (state === 'issued') return <>{t('card.issuedEnding', { last4: last4 ?? '' })}</>
+  if (state === 'issued') return <>{'•••• ' + (last4 ?? '').slice(-4)}</>
   if (state === 'issuing') return <>{t('card.issuing')}</>
   if (state === 'none') return <>{t('card.none')}</>
   return (
@@ -131,7 +131,6 @@ export function CardTile({ agent, lithicConfigured: configured, onChanged }: { a
 
 /** One-line card state for grid cards, with the usage bar when a card exists. */
 export function CardLine({ agent, lithicConfigured: configured, onChanged }: { agent: Agent; lithicConfigured: boolean; onChanged: () => void }) {
-  const t = useT()
   const [issuing, setIssuing] = useState(false)
   const card = agent.card
   const state = cardState(card, configured, issuing)
@@ -153,7 +152,7 @@ export function CardLine({ agent, lithicConfigured: configured, onChanged }: { a
           <CardStateText state="issued" last4={card.last4} /> <span className="text-neutral-400 ms-1">{providerLabel(card.provider)}</span>
         </span>
         <span className="tnum text-neutral-600 whitespace-nowrap">
-          {sar(card.available_balance, { compact: true })} {t('card.of', { amount: sar(card.credit_limit, { compact: true }) })}
+          {sar(card.available_balance)} left
         </span>
       </div>
       <ProgressBar value={Math.max(0, card.credit_limit - card.available_balance)} max={card.credit_limit} thin className="mt-1.5" />

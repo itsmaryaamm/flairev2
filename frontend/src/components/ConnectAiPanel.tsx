@@ -122,11 +122,15 @@ export function ConnectAiPanel({ className = '' }: { className?: string }) {
         </div>
       )}
 
-      <div>
-        <div className="label">{t('connect.agentInstructions')}</div>
-        <p className="text-xs text-neutral-500 mb-1.5">{t('connect.agentInstructionsHint')}</p>
-        <CopyBlock value={d.agent_instructions} />
-      </div>
+      <details className="group">
+        <summary className="cursor-pointer text-sm font-semibold text-neutral-600 hover:text-ink list-none flex items-center gap-1.5">
+          <span className="inline-block transition-transform group-open:rotate-90">›</span> Advanced: optional agent instructions
+        </summary>
+        <div className="mt-2">
+          <p className="text-xs text-neutral-500 mb-1.5">Not required. Flaire's tools describe themselves, so your AI can find them without this.</p>
+          <CopyBlock value={d.agent_instructions} />
+        </div>
+      </details>
     </div>
   )
 }
