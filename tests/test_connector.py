@@ -165,3 +165,12 @@ def test_chatgpt_redirect_trusted_host_fallback(monkeypatch):
     assert not oauth._trusted_host_redirect(cid, "https://evil.example/cb")
     assert not oauth._trusted_host_redirect("https://evil.example/c.json", "https://chatgpt.com/connector/oauth/x")
     assert not oauth._trusted_host_redirect(cid, "http://chatgpt.com/x")
+
+
+def test_guard_blocks_off_topic_but_keeps_flaire_questions():
+    from app.agents.guard import is_on_topic
+    for q in ["what is 12*7", "solve this equation for my homework", "write me a python script", "tell me a joke", "write an essay about dogs"]:
+        assert not is_on_topic(q), q
+    for q in ["How does Flaire work?", "can my AI overspend?", "is it real money", "how do I set a budget", "approve the AWS request", "hi", "ما هي ميزانية الذكاء الاصطناعي؟", "how much is left for Marketing AI"]:
+        assert is_on_topic(q), q
+    assert is_on_topic("and the second one?", True) and not is_on_topic("and the second one?", False)

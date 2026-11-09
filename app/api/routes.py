@@ -858,6 +858,9 @@ def public_chat(body: PublicChatIn, request: Request):
     _PUB_HITS[ip] = hits
     if len(_PUB_HITS) > 5000:
         _PUB_HITS.clear()
+    from app.agents import guard
+    if not guard.is_on_topic(body.message, bool(body.history)):
+        return {"reply": guard.refusal(body.message), "mode": "blocked"}
     if not settings.gemini_enabled:
         return {"reply": _PUB_FALLBACK, "mode": "static"}
     hist = [{"role": h["role"], "content": str(h["content"])[:600]} for h in (body.history or []) if h.get("role") in ("user", "assistant") and h.get("content")][-8:]

@@ -440,6 +440,11 @@ def assistant_chat(db: Session, company: Company, user: User, history: list[dict
     """history: prior [{role, content}] text turns from the client. Returns {reply, actions, transcript}."""
     actions: list[dict] = []
     transcript = [{"role": "user", "content": message}]
+    from app.agents import guard
+    if not guard.is_on_topic(message, bool(history)):
+        reply = guard.refusal(message)
+        transcript.append({"role": "assistant", "content": reply})
+        return {"reply": reply, "actions": actions, "transcript": transcript, "mode": "blocked"}
     if settings.gemini_enabled:
         from app.agents import gemini
         from app.agents.knowledge import PRODUCT
