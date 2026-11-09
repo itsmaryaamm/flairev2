@@ -244,5 +244,16 @@ function sc(){var y=scrollY,max=Math.max(1,document.documentElement.scrollHeight
 addEventListener('scroll',sc,{passive:true});addEventListener('resize',sc);
 apply();sc();
 </script>
+<script>
+(function(){var E='emailmaryamimran@gmail.com',ar=false;try{ar=localStorage.getItem('flaire:locale')==='ar'}catch(e){}
+var T=ar?{h:'تواصل معنا',p:'اختر الطريقة الأسهل لك. نرد عادةً خلال يوم عمل.',g:'فتح Gmail',m:'فتح تطبيق البريد',c:'نسخ البريد',ok:'تم النسخ',x:'إغلاق'}:{h:'Contact us',p:'Pick whatever is easiest. We usually reply within one working day.',g:'Open Gmail',m:'Open mail app',c:'Copy email address',ok:'Copied',x:'Close'};
+var s=document.createElement('style');s.textContent='.cm{position:fixed;inset:0;z-index:99999;background:rgba(20,10,40,.45);display:none;align-items:center;justify-content:center;padding:16px}.cm.on{display:flex}.cm>div{background:#fff;color:#1D1D1F;border-radius:20px;padding:26px;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.25);font-family:inherit}.cm h3{margin:0 0 6px;font-size:22px}.cm p{margin:0 0 16px;color:#48484D;font-size:15px;line-height:1.5}.cm b{display:block;margin:0 0 14px;font-size:15px;word-break:break-all}.cm a,.cm button{display:block;width:100%;box-sizing:border-box;text-align:center;padding:13px;margin:8px 0 0;border-radius:999px;font:600 15px inherit;font-family:inherit;border:0;cursor:pointer;text-decoration:none}.cm .p{background:#7428F5;color:#fff}.cm .q{background:#F2F0F7;color:#1D1D1F}';document.head.appendChild(s);
+var d=document.createElement('div');d.className='cm';d.setAttribute('role','dialog');d.innerHTML='<div><h3>'+T.h+'</h3><p>'+T.p+'</p><b>'+E+'</b><a class="p" target="_blank" rel="noopener" href="https://mail.google.com/mail/?view=cm&fs=1&to='+E+'">'+T.g+'</a><a class="q" href="mailto:'+E+'">'+T.m+'</a><button class="q" id="cmc">'+T.c+'</button><button class="q" id="cmx">'+T.x+'</button></div>';document.body.appendChild(d);
+function close(){d.classList.remove('on')}
+d.addEventListener('click',function(e){if(e.target===d)close()});document.getElementById('cmx').onclick=close;
+document.getElementById('cmc').onclick=function(){var b=this;function done(){b.textContent=T.ok}try{navigator.clipboard.writeText(E).then(done,done)}catch(e){done()}};
+document.addEventListener('keydown',function(e){if(e.key==='Escape')close()});
+document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[href^="mailto:"]');if(a&&!a.closest('.cm')){e.preventDefault();d.classList.add('on')}});})();
+</script>
 </body>
 </html>
