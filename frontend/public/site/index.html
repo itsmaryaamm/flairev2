@@ -119,10 +119,51 @@ footer .in{max-width:1200px;margin:0 auto;display:flex;flex-wrap:wrap;justify-co
 footer .brand{display:flex;align-items:center;gap:8px;color:#F5F5F7}footer .brand img{width:24px;height:24px}footer .brand b{font-size:18px;font-weight:600;letter-spacing:-.03em}
 footer nav{display:flex;gap:24px;flex-wrap:wrap}footer nav a{color:#C7C3D4}footer nav a:hover{color:#fff}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}html{scroll-behavior:auto}}
+
+/* motion */
+.hero:before{content:"";position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(165,133,255,.09) 1px,transparent 1px),linear-gradient(90deg,rgba(165,133,255,.09) 1px,transparent 1px);background-size:56px 56px;-webkit-mask-image:radial-gradient(ellipse 70% 60% at 50% 30%,#000 20%,transparent 75%);mask-image:radial-gradient(ellipse 70% 60% at 50% 30%,#000 20%,transparent 75%);animation:grid 14s linear infinite}
+@keyframes grid{to{background-position:0 56px,56px 0}}
+.spot{position:absolute;inset:0;pointer-events:none;background:radial-gradient(520px circle at var(--mx,50%) var(--my,25%),rgba(140,95,255,.22),transparent 60%)}
+.glow{animation:breathe 6s ease-in-out infinite}
+@keyframes breathe{50%{opacity:.55;transform:scale(1.08)}}
+.band1{animation:drift 18s ease-in-out infinite alternate}
+@keyframes drift{to{transform:skewY(-7deg) translateX(-4%)}}
+.float{animation:bob 6s ease-in-out 1.6s infinite}
+@keyframes bob{50%{transform:translateY(-14px)}}
+.pill span{animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(116,40,245,.6)}50%{box-shadow:0 0 0 8px rgba(116,40,245,0)}}
+.btn-light{position:relative;overflow:hidden}
+.btn-light:after{content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(100deg,transparent,rgba(116,40,245,.28),transparent);transform:skewX(-20deg);animation:shine 4s ease-in-out 2s infinite}
+@keyframes shine{0%{left:-60%}35%,100%{left:140%}}
+.btn:hover{transform:translateY(-2px)}
+.btn{transition:transform .2s,background .2s,color .2s}
+.rv{opacity:0;transform:translateY(28px);transition:opacity .8s cubic-bezier(.2,.8,.2,1),transform .8s cubic-bezier(.2,.8,.2,1)}
+.rv.in{opacity:1;transform:none}
+.ex{opacity:0;transform:translateX(-18px);transition:opacity .6s,transform .6s}
+.example.in .ex{opacity:1;transform:none}
+.example.in .ex:nth-of-type(2){transition-delay:.15s}.example.in .ex:nth-of-type(3){transition-delay:.9s}.example.in .ex:nth-of-type(4){transition-delay:1.65s}
+.tag{display:inline-block;transform:scale(.6);opacity:0;transition:transform .5s cubic-bezier(.3,1.6,.5,1),opacity .4s}
+.example.in .tag{transform:none;opacity:1}
+.example.in .ex:nth-of-type(2) .tag{transition-delay:.5s}.example.in .ex:nth-of-type(3) .tag{transition-delay:1.25s}.example.in .ex:nth-of-type(4) .tag{transition-delay:2s}
+.ticker{position:relative;width:100vw;margin-top:clamp(28px,5vh,48px);overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
+.ticker div{display:flex;gap:14px;width:max-content;animation:scroll 40s linear infinite}
+.ticker:hover div{animation-play-state:paused}
+@keyframes scroll{to{transform:translateX(-50%)}}
+.tk{display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(8px);font-size:15px;color:#E4E1EC;white-space:nowrap}
+.tk i{width:8px;height:8px;border-radius:50%;animation:blink 2s infinite}.tk b{color:#fff;font-weight:600}
+@keyframes blink{50%{opacity:.35}}
+.hl{animation:ring 2.6s ease-in-out infinite}
+@keyframes ring{50%{box-shadow:0 0 0 3px #A585FF,0 0 24px 4px rgba(116,40,245,.55),0 0 0 9999px rgba(29,29,31,.28)}}
+.win{transition:transform .4s cubic-bezier(.2,.8,.2,1)}
+.step .win:hover{transform:translateY(-6px) rotate(-.4deg)}
+.dark .win{animation:none}
+.stage .win{box-shadow:0 0 0 1px rgba(255,255,255,.12),0 50px 120px -20px rgba(116,40,245,.5)}
+.live{display:inline-flex;align-items:center;gap:8px}.live:before{content:"";width:8px;height:8px;border-radius:50%;background:#4ADE80;animation:blink 1.4s infinite}
+@media (prefers-reduced-motion:reduce){.rv,.ex,.tag{opacity:1!important;transform:none!important}}
 </style>
 </head>
 <body>
-<div class="notice"><b>Practice mode</b>Everything here uses pretend money. Nothing is ever charged.</div>
+<div class="notice"><b>Sandbox</b>Everything here is simulated. No real money moves.</div>
 <header id="nav"><div class="bar">
   <a class="logo" href="#top" aria-label="Flaire home"><img src="assets/mark.png" alt=""><b>Flaire</b></a>
   <nav class="main" aria-label="Main"><a href="#how">How it works</a><a href="#tour">Take a look</a><a href="#faq">Questions</a></nav>
@@ -131,26 +172,27 @@ footer nav{display:flex;gap:24px;flex-wrap:wrap}footer nav a{color:#C7C3D4}foote
 
 <main id="top">
 <section class="hero" id="hero" aria-labelledby="hero-h">
-  <div class="band1" aria-hidden="true"></div><div class="band2" aria-hidden="true"></div><div class="glow" aria-hidden="true"></div>
+  <div class="spot" id="spot" aria-hidden="true"></div><div class="band1" aria-hidden="true"></div><div class="band2" aria-hidden="true"></div><div class="glow" aria-hidden="true"></div>
   <div class="hero-in">
     <span class="pill"><span>Works with</span>ChatGPT and Claude</span>
     <h1 id="hero-h">Your AI spends. <em>You decide.</em></h1>
     <p class="lede">Flaire gives your AI assistant its own company card, with a spending limit you set. Small things go through. Anything bigger waits for your OK.</p>
-    <div class="ctas"><a class="btn btn-light" href="/signup">Try it free with pretend money</a><a class="btn btn-ghost" href="#how">See how it works</a></div>
-    <span class="fine">No real money. No credit card needed to try.</span>
+    <div class="ctas"><a class="btn btn-light" href="/signup">Try the sandbox free</a><a class="btn btn-ghost" href="#how">See how it works</a></div>
+    <span class="fine">Simulated money only. No card needed.</span>
   </div>
-  <div class="cardwrap" id="cardwrap"><div class="card3d" id="card3d"><img src="assets/card.webp" width="1536" height="1024" alt="The Flaire card your AI assistant uses"><div class="shine" id="shine" aria-hidden="true"></div></div></div>
-  <div class="example">
+  <div class="cardwrap" id="cardwrap"><div class="float"><div class="card3d" id="card3d"><img src="assets/card.webp" width="1536" height="1024" alt="The Flaire card your AI assistant uses"><div class="shine" id="shine" aria-hidden="true"></div></div></div></div>
+  <div class="ticker" aria-hidden="true"><div><span class="tk"><i style="background:#7FE0A0"></i>Marketing AI <b>Canva Pro</b> SAR 120 Approved</span><span class="tk"><i style="background:#FFC93C"></i>Procurement AI <b>AWS</b> SAR 2,200 Asks you</span><span class="tk"><i style="background:#F08A82"></i>Operations AI <b>Unknown Supplier Co</b> SAR 3,400 Stopped</span><span class="tk"><i style="background:#7FE0A0"></i>Marketing AI <b>Google Ads</b> SAR 310 Approved</span><span class="tk"><i style="background:#FFC93C"></i>Marketing AI <b>TikTok Ads</b> SAR 600 Asks you</span><span class="tk"><i style="background:#7FE0A0"></i>Operations AI <b>Careem Business</b> SAR 85 Approved</span><span class="tk"><i style="background:#F08A82"></i>Operations AI <b>Gift cards</b> SAR 900 Stopped</span><span class="tk"><i style="background:#7FE0A0"></i>Marketing AI <b>Canva Pro</b> SAR 120 Approved</span><span class="tk"><i style="background:#FFC93C"></i>Procurement AI <b>AWS</b> SAR 2,200 Asks you</span><span class="tk"><i style="background:#F08A82"></i>Operations AI <b>Unknown Supplier Co</b> SAR 3,400 Stopped</span><span class="tk"><i style="background:#7FE0A0"></i>Marketing AI <b>Google Ads</b> SAR 310 Approved</span><span class="tk"><i style="background:#FFC93C"></i>Marketing AI <b>TikTok Ads</b> SAR 600 Asks you</span><span class="tk"><i style="background:#7FE0A0"></i>Operations AI <b>Careem Business</b> SAR 85 Approved</span><span class="tk"><i style="background:#F08A82"></i>Operations AI <b>Gift cards</b> SAR 900 Stopped</span></div></div>
+  <div class="example rv-ex">
     <header><span class="mono">AN EXAMPLE</span><p>You let your AI order supplies, with a limit of SAR 750 per purchase.</p></header>
     <div class="ex"><span>It wants <b>SAR 170 of printer ink</b></span><span class="res"><span class="tag" style="background:#7FE0A0">Approved</span>Under your limit, so it goes straight through.</span></div>
     <div class="ex"><span>It wants <b>SAR 2,200 for a yearly software plan</b></span><span class="res"><span class="tag" style="background:#FFC93C">Asks you</span>Over your limit, so it waits for your yes or no.</span></div>
-    <div class="ex"><span>It wants <b>something from a supplier you blocked</b></span><span class="res"><span class="tag" style="background:#F08A82">Stopped</span>Nothing is charged. You can see that it tried.</span></div>
+    <div class="ex"><span>It wants <b>something from a supplier you blocked</b></span><span class="res"><span class="tag" style="background:#F08A82">Stopped</span>Nothing goes through. You can see that it tried.</span></div>
   </div>
 </section>
 
 <section class="light" id="how" aria-labelledby="how-h"><div class="wrap">
   <div style="display:flex;flex-direction:column;gap:14px;max-width:720px">
-    <span class="mono eyebrow">HOW IT WORKS</span>
+    <span class="mono eyebrow live">HOW IT WORKS</span>
     <h2 id="how-h" style="font-size:clamp(40px,5vw,68px)">Three steps. You set it up once.</h2>
     <p class="lead">If you can use online banking, you can use Flaire.</p>
   </div>
@@ -160,8 +202,8 @@ footer nav{display:flex;gap:24px;flex-wrap:wrap}footer nav a{color:#C7C3D4}foote
 <section class="dark" id="tour" aria-labelledby="tour-h"><div class="halo" aria-hidden="true"></div>
   <div class="tour">
     <div style="display:flex;flex-direction:column;align-items:center;gap:16px"><span class="mono" style="color:#C9B6FF">TAKE A LOOK</span>
-      <h2 id="tour-h">Every riyal, in plain sight.</h2>
-      <p style="font-size:19px;line-height:1.5;color:#E4E1EC">Pick a screen. These are real screens from a demo company, with pretend money.</p></div>
+      <h2 id="tour-h">Every riyal, live.</h2>
+      <p style="font-size:19px;line-height:1.5;color:#E4E1EC">Pick a screen. These are real screens from a demo company in the sandbox.</p></div>
     <div class="tabs" id="tabs"></div>
     <div class="stage" id="stage">
       <div class="win"><div class="chrome"><i></i><i></i><i></i><span id="tlabel"></span></div>
@@ -178,16 +220,16 @@ footer nav{display:flex;gap:24px;flex-wrap:wrap}footer nav a{color:#C7C3D4}foote
 </div></section>
 
 <section class="end" aria-labelledby="end-h"><div class="band1" aria-hidden="true"></div>
-  <div class="in"><h2 id="end-h">Try it with pretend money first.</h2>
-    <p>Set a limit, watch what your AI asks for, and say yes or no. Nothing is charged while you practice.</p>
-    <a class="btn btn-light" href="/signup">Try it free with pretend money</a></div>
+  <div class="in"><h2 id="end-h">Test it in the sandbox first.</h2>
+    <p>Set a limit, watch what your AI asks for, and say yes or no. Nothing real is charged in the sandbox.</p>
+    <a class="btn btn-light" href="/signup">Try the sandbox free</a></div>
 </section>
 </main>
 
 <footer><div class="in">
   <span class="brand"><img src="assets/mark.png" alt=""><b>Flaire</b></span>
   <nav aria-label="Footer"><a href="#how">How it works</a><a href="#faq">Questions</a><a href="mailto:emailmaryamimran@gmail.com">Contact</a><a href="/login">Sign in</a></nav>
-  <span style="font-size:15px">Practice mode · Pretend money only</span>
+  <span style="font-size:15px">Sandbox · Simulated money only</span>
 </div></footer>
 
 <script>
@@ -214,7 +256,7 @@ var FAQ=[
  ['Do I need to be good with computers?','No. If you can use online banking, you can use Flaire. You make a few simple choices once, like how much your AI can spend, and Flaire takes care of the rest.'],
  ['Can my AI spend more than I allow?','No. Your limits are checked by Flaire on every single purchase, not by the AI. Anything over your limit stops and waits for you.'],
  ['What happens when it needs my OK?','The purchase waits on your Approvals screen. You see what it wants, how much, and why. Then you say yes or no.'],
- ['Is my real money at risk while I try it?','No. Flaire is in practice mode: pretend money and simulated cards. Nothing is ever charged, so you can test every rule safely. Real payments are not switched on yet.'],
+ ['Is my real money at risk while I try it?','No. Flaire is in sandbox mode: simulated money and simulated cards. Nothing real is ever charged, so you can test every rule safely. Real payments are not switched on yet.'],
  ['Which AI tools does it work with?','ChatGPT and Claude. You connect them in a couple of clicks from the Connections screen, and choose which AI helper each one is.'],
  ['Can I see everything it asked for?','Yes. Every request, every decision and every approval is saved. You can download the full history for your accountant.']
 ];
@@ -241,6 +283,10 @@ var nav=document.getElementById('nav');function sc(){nav.classList.toggle('on',s
 var hero=document.getElementById('hero'),c3=document.getElementById('card3d'),sh=document.getElementById('shine');
 if(!rm&&matchMedia('(min-width:960px)').matches){var raf;hero.addEventListener('mousemove',function(e){var r=hero.getBoundingClientRect(),nx=(e.clientX-r.left)/r.width-.5,ny=(e.clientY-r.top)/r.height-.5;cancelAnimationFrame(raf);raf=requestAnimationFrame(function(){c3.style.transform='rotateX('+(8-ny*8).toFixed(2)+'deg) rotateY('+(nx*10).toFixed(2)+'deg) rotateZ(-2deg)';sh.style.setProperty('--sx',(50+nx*90)+'%');sh.style.setProperty('--sy',(30+ny*80)+'%')})});
  hero.addEventListener('mouseleave',function(){c3.style.transform='rotateX(8deg) rotateZ(-2deg)'})}
+
+var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})},{threshold:.18});
+document.querySelectorAll('.example,.step,.light h2,.tour>div,.tabs,.stage,.q,.contact,.end .in').forEach(function(n){if(!n.classList.contains('example'))n.classList.add('rv');io.observe(n)});
+var spot=document.getElementById('spot');hero.addEventListener('mousemove',function(e){var r=hero.getBoundingClientRect();spot.style.setProperty('--mx',(e.clientX-r.left)+'px');spot.style.setProperty('--my',(e.clientY-r.top)+'px')});
 </script>
 </body>
 </html>
