@@ -224,3 +224,7 @@ html.dark .ticket .text-neutral-500,html.dark .ticket .text-neutral-600{color:#B
 
 /* The wordmark is near-black, so swap in the light version on dark backgrounds */
 html.dark img[src="/flaire-logo.png"] { content: url(/flaire-logo-dark.png); }
+
+/* hover states for hard-coded light hexes */
+html.dark .hover\:bg-\[\#E4E0D7\]:hover{background-color:#2B2640}
+html.dark .hover\:bg-\[\#FAF8F4\]:hover{background-color:#1F1A38}
