@@ -340,6 +340,8 @@ function EmployeeStep({ status, onBack, advance }: StepProps) {
         gl_code: null,
       }
       const { data } = await api.post<{ agent: Agent; api_key: string }>('/agents', payload)
+      // Notify approvers from the same amount the person just chose as the approval threshold.
+      await api.patch('/company', { notify_threshold: th }).catch(() => undefined)
       let agent = data.agent
       if (!agent.card && company?.lithic_configured) {
         // Newer backend: issue the employee card explicitly. Older backend issues it on create or not at all.

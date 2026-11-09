@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Download } from 'lucide-react'
+import { Download, RefreshCw } from 'lucide-react'
 import { api, downloadFile, errorMessage } from '../lib/api'
 import { useT } from '../lib/i18n'
 import { useFetch } from '../lib/useFetch'
@@ -99,7 +99,12 @@ export default function ActivityPage() {
       <div className="-mt-5">
         <header className="flex items-center justify-between pt-[calc(1.25rem+env(safe-area-inset-top))]">
           <h1 className="font-display text-[34px] leading-none font-bold tracking-tightest">{t('activity.title')}</h1>
-          <SandboxBadge />
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={refresh} aria-label="Refresh" className="h-10 w-10 rounded-full bg-white border border-line inline-flex items-center justify-center text-brand">
+              <RefreshCw className={`h-4 w-4 ${reqs.loading ? 'animate-spin' : ''}`} />
+            </button>
+            <SandboxBadge />
+          </div>
         </header>
         <div className="mt-4 -mx-4 px-4 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
           <button type="button" onClick={() => setAgentId('')} className={`shrink-0 h-10 px-4 rounded-full text-[15px] font-semibold ${agentId === '' ? 'bg-brand text-white' : 'bg-white border border-line text-ink'}`}>
@@ -140,6 +145,9 @@ export default function ActivityPage() {
         subtitle={t('activity.subtitle')}
         actions={
           <>
+            <button type="button" className="btn-secondary text-xs" onClick={refresh}>
+              <RefreshCw className={`h-3.5 w-3.5 ${reqs.loading ? 'animate-spin' : ''}`} /> Refresh
+            </button>
             <button type="button" className="btn-secondary text-xs" onClick={() => setFeesOpen(true)} disabled={!fees.data}>
               {t('activity.feesThisMonth', { amount: fees.data ? sar(fees.data.fees) : '...' })}
             </button>

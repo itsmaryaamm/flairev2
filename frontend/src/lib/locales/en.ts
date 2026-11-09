@@ -1,5 +1,15 @@
 /** English strings. Keys are namespaced by screen; {name} placeholders are filled by t(). */
 export const en: Record<string, string> = {
+  'install.title': 'Add Flaire to your phone',
+  'install.why': 'Open it like an app and get a notification the moment your AI needs you.',
+  'install.ios1': 'Tap the Share button at the bottom of Safari',
+  'install.ios2': 'Tap Add to Home Screen, then open Flaire from the icon',
+  'install.button': 'Install Flaire',
+  'install.and1': 'Tap the menu (three dots) at the top right of Chrome',
+  'install.and2': 'Tap Install app or Add to Home screen',
+  'install.notifTitle': 'Turn on notifications',
+  'install.notifWhy': 'One tap. We only ping you when a request needs your OK.',
+  'install.notifButton': 'Turn on',
   // ---- nav / layout
   'nav.home': 'Home',
   'nav.employees': 'Employees',

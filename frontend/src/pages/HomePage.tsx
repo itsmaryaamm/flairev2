@@ -15,6 +15,7 @@ import { MonthCard } from '../components/home/MonthCard'
 import { RecentActivity } from '../components/home/RecentActivity'
 import { MyViewPanel } from '../components/home/MyViewPanel'
 import { AdminBlock } from '../components/home/AdminBlock'
+import { InstallSheet } from '../components/phone/InstallSheet'
 import { PhoneAllClear, PhoneGreeting, PhoneRecent, PhoneSpend } from '../components/phone/Phone'
 
 const REFRESH_MS = 30_000
@@ -129,6 +130,7 @@ export default function HomePage() {
     return (
       <div className="space-y-4 -mt-5">
         <PhoneGreeting />
+        <InstallSheet />
         {error && <ErrorNote message={error} />}
         <NeedsYou
           items={needsItems}

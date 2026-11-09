@@ -1,5 +1,15 @@
 /** Arabic strings (Saudi business register). Same keys as en.ts; anything missing falls back to English. */
 export const ar: Record<string, string> = {
+  'install.title': 'أضف Flaire إلى هاتفك',
+  'install.why': 'افتحه كتطبيق واستلم إشعارًا فور حاجة ذكائك الاصطناعي إليك.',
+  'install.ios1': 'اضغط زر المشاركة أسفل Safari',
+  'install.ios2': 'اضغط إضافة إلى الشاشة الرئيسية ثم افتح Flaire من الأيقونة',
+  'install.button': 'ثبّت Flaire',
+  'install.and1': 'اضغط القائمة (ثلاث نقاط) أعلى يمين Chrome',
+  'install.and2': 'اضغط تثبيت التطبيق أو إضافة إلى الشاشة الرئيسية',
+  'install.notifTitle': 'فعّل الإشعارات',
+  'install.notifWhy': 'ضغطة واحدة. ننبهك فقط عندما يحتاج طلب إلى موافقتك.',
+  'install.notifButton': 'تفعيل',
   // ---- nav / layout
   'nav.home': 'الرئيسية',
   'nav.employees': 'الموظفون',
