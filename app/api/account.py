@@ -173,6 +173,18 @@ def delete_account(body: DeleteIn, user: User = Depends(get_current_user), db: S
         raise HTTPException(400, 'Type DELETE to confirm.')
     if not verify_user_password(user, body.password):
         raise HTTPException(403, "Password is wrong.")
+    try:
+        return _do_delete(body, user, db)
+    except HTTPException:
+        raise
+    except Exception as exc:  # surface the real cause instead of a bare network error in the browser
+        import logging
+        db.rollback()
+        logging.getLogger("flaire.account").exception("account delete failed")
+        raise HTTPException(500, f"Could not delete the account: {type(exc).__name__}: {str(exc)[:240]}")
+
+
+def _do_delete(body: DeleteIn, user: User, db: Session):
     uid = user.supabase_uid
     removed = "user"
     if user.company_id is not None:
