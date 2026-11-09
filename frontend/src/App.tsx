@@ -42,7 +42,9 @@ function RequireAuth() {
   const location = useLocation()
   if (loading) return <PageLoader />
   if (!isAuthenticated) {
-    if (location.pathname === '/') { window.location.replace('/site/'); return <PageLoader /> }
+    // The installed app (home screen icon) opens at the sign-in page, not the marketing site.
+    const installed = window.matchMedia('(display-mode: standalone)').matches || (navigator as unknown as { standalone?: boolean }).standalone === true
+    if (location.pathname === '/' && !installed) { window.location.replace('/site/'); return <PageLoader /> }
     return <Navigate to="/login" replace state={{ from: location.pathname }} />
   }
   if (setupRequired && location.pathname !== '/setup' && location.pathname !== '/welcome') return <Navigate to="/setup" replace />
