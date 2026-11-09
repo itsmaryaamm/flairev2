@@ -1,5 +1,8 @@
 /** English strings. Keys are namespaced by screen; {name} placeholders are filled by t(). */
 export const en: Record<string, string> = {
+  'install.blockedTitle': 'Notifications are off for Flaire',
+  'install.blockedIos': 'If nothing pops up: open your phone Settings, tap Notifications, find Flaire and switch Allow Notifications on.',
+  'install.blockedAnd': 'If nothing pops up: press and hold the Flaire icon, tap App info, then Notifications, and switch them on.',
   'install.title': 'Add Flaire to your phone',
   'install.why': 'Open it like an app and get a notification the moment your AI needs you.',
   'install.ios1': 'Tap the Share button at the bottom of Safari',

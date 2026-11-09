@@ -1,5 +1,8 @@
 /** Arabic strings (Saudi business register). Same keys as en.ts; anything missing falls back to English. */
 export const ar: Record<string, string> = {
+  'install.blockedTitle': 'الإشعارات متوقفة لتطبيق Flaire',
+  'install.blockedIos': 'إن لم يظهر شيء: افتح إعدادات الهاتف، ثم الإشعارات، وابحث عن Flaire وفعّل السماح بالإشعارات.',
+  'install.blockedAnd': 'إن لم يظهر شيء: اضغط مطولًا على أيقونة Flaire، ثم معلومات التطبيق، ثم الإشعارات، وفعّلها.',
   'install.title': 'أضف Flaire إلى هاتفك',
   'install.why': 'افتحه كتطبيق واستلم إشعارًا فور حاجة ذكائك الاصطناعي إليك.',
   'install.ios1': 'اضغط زر المشاركة أسفل Safari',

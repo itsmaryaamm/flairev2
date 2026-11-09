@@ -81,6 +81,15 @@ export function InstallSheet() {
     )
   }
 
+  if (state === 'denied') {
+    return (
+      <div className="rounded-2xl bg-brand-light border border-line p-4">
+        <div className="flex items-center gap-2 text-sm font-semibold"><Bell className="h-5 w-5 text-brand shrink-0" /> {t('install.blockedTitle')}</div>
+        <p className="text-xs text-neutral-600 mt-1.5">{ios ? t('install.blockedIos') : t('install.blockedAnd')}</p>
+      </div>
+    )
+  }
+
   if ((standalone || !ios) && state === 'off' && !asked) {
     return (
       <div className="rounded-2xl bg-brand-light border border-line p-4 flex items-center gap-3">
@@ -88,6 +97,7 @@ export function InstallSheet() {
         <div className="flex-1 min-w-0">
           <div className="text-sm font-semibold">{t('install.notifTitle')}</div>
           <div className="text-xs text-neutral-600">{t('install.notifWhy')}</div>
+          <div className="text-[11px] text-neutral-500 mt-1">{ios ? t('install.blockedIos') : t('install.blockedAnd')}</div>
         </div>
         <button type="button" className="btn-primary text-xs shrink-0" disabled={busy} onClick={async () => { await toggle(); closeNotif() }}>
           {busy && <Spinner className="h-3.5 w-3.5" />} {t('install.notifButton')}
