@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Flaire | Let your AI spend. You stay in charge.</title>
+<meta name="description" content="Flaire gives your AI assistant, like ChatGPT or Claude, a company card with a spending limit you set. Anything over your limit waits for your OK.">
+<meta property="og:title" content="Flaire | Your AI spends. You decide.">
+<meta property="og:description" content="Give your AI its own company card with limits you set. Anything bigger waits for your OK.">
+<meta property="og:image" content="/site/assets/overview.webp">
+<link rel="icon" href="/favicon-32.png" sizes="32x32">
+<link rel="icon" href="/favicon-64.png" sizes="64x64">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<link rel="preload" href="assets/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+@font-face{font-family:'Geist';font-weight:100 900;font-display:swap;src:url(assets/geist-latin-ext.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:'Geist';font-weight:100 900;font-display:swap;src:url(assets/geist-latin.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:#07060B;color:#F5F5F7;font-family:'Geist',system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:#C9B6FF;text-decoration:none}a:hover{color:#fff}
+a:focus-visible,button:focus-visible{outline:3px solid #B69BFF;outline-offset:3px;border-radius:12px}
+::selection{background:#7428F5;color:#fff}
+img{display:block}
+.mono{font:500 14px ui-monospace,'SFMono-Regular',Menlo,monospace;letter-spacing:.04em}
+.btn{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;white-space:nowrap;font-weight:600;transition:background .2s,color .2s}
+.btn-light{background:#F5F5F7;color:#07060B}.btn-light:hover{background:#fff;color:#07060B}
+.notice{position:relative;z-index:70;display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:10px;padding:10px 16px;background:#0E0C14;border-bottom:1px solid rgba(255,255,255,.08);font-size:15px;line-height:1.4;color:#E4E1EC;text-align:center}
+.notice b{padding:3px 9px;border-radius:6px;background:#FFC93C;color:#07060B;font-size:13px;font-weight:600}
+header{position:sticky;top:0;z-index:60;border-bottom:1px solid transparent;transition:background .3s,border-color .3s;backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px)}
+header.on{background:rgba(7,6,11,.82);border-color:rgba(255,255,255,.1)}
+.bar{max-width:1200px;margin:0 auto;height:68px;padding:0 clamp(18px,3vw,28px);display:flex;align-items:center;gap:24px}
+.logo{display:flex;align-items:center;gap:9px;color:#fff;flex:none}.logo img{width:28px;height:28px}.logo b{font-size:20px;font-weight:600;letter-spacing:-.03em}
+nav.main{flex:1;min-width:0;display:flex;justify-content:center;gap:32px;font-weight:500;font-size:16px}nav.main a{color:#E4E1EC}nav.main a:hover{color:#fff}
+.right{margin-left:auto;display:flex;align-items:center;gap:6px;font-weight:500;font-size:16px}.right .signin{padding:10px 14px;color:#E4E1EC}
+.right .try{padding:11px 20px}
+@media(max-width:860px){nav.main{display:none}}@media(max-width:640px){.signin{display:none}}
+.hero{position:relative;overflow:hidden;padding:clamp(64px,10vh,104px) clamp(18px,4vw,40px) 0;display:flex;flex-direction:column;align-items:center}
+.band1,.band2,.glow{position:absolute;pointer-events:none}
+.band1{left:-20%;right:-20%;top:58%;height:1100px;transform:skewY(-7deg);transform-origin:100% 0;background:linear-gradient(100deg,#160726 0%,#2E0C70 26%,#5418D8 48%,#7428F5 62%,#A585FF 80%,#E9E1FF 100%)}
+.band2{left:-20%;right:-20%;top:66%;height:1100px;transform:skewY(4deg);transform-origin:0 0;background:linear-gradient(80deg,rgba(7,6,11,0) 0%,rgba(30,10,60,.65) 40%,rgba(116,40,245,.45) 75%,rgba(233,225,255,.35) 100%);mix-blend-mode:multiply}
+.glow{left:50%;top:62%;width:1100px;height:700px;margin-left:-550px;border-radius:50%;background:radial-gradient(closest-side,rgba(165,133,255,.45),rgba(165,133,255,0));filter:blur(20px)}
+.hero-in{position:relative;max-width:1000px;display:flex;flex-direction:column;align-items:center;gap:24px;text-align:center;animation:rise .9s cubic-bezier(.2,.8,.2,1) both}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:6px 14px 6px 6px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);font-size:15px;color:#E4E1EC;white-space:nowrap}
+.pill span{padding:3px 10px;border-radius:999px;background:#7428F5;color:#fff;font-weight:500;font-size:13px}
+h1{font-size:clamp(54px,9vw,128px);font-weight:600;line-height:.92;letter-spacing:-.06em;text-wrap:balance}
+h1 em{font-style:normal;background:linear-gradient(95deg,#fff 10%,#C9B6FF 55%,#8E63FF 100%);-webkit-background-clip:text;background-clip:text;color:transparent;padding-right:.04em}
+.lede{max-width:640px;font-size:clamp(19px,1.7vw,23px);line-height:1.5;color:#E4E1EC;text-wrap:pretty}
+.ctas{display:flex;align-items:center;gap:12px 14px;margin-top:6px}
+.ctas .btn{padding:18px 30px;font-size:18px}
+.ctas .btn-light{box-shadow:0 0 0 1px rgba(255,255,255,.2),0 10px 40px rgba(165,133,255,.35)}
+.ctas .btn-ghost{padding:18px 26px;font-weight:500;color:#F5F5F7;border:1px solid rgba(255,255,255,.28)}.ctas .btn-ghost:hover{background:rgba(255,255,255,.08);color:#fff}
+@media(max-width:640px){.ctas{flex-direction:column;width:100%}.ctas .btn{width:100%}}
+.fine{font-size:15px;color:#C7C3D4}
+.cardwrap{position:relative;width:min(100%,760px);margin-top:clamp(36px,6vh,60px);perspective:1400px;animation:cardin 1.4s cubic-bezier(.16,1,.3,1) .15s both}
+@keyframes cardin{from{opacity:0;transform:translateY(90px) scale(.94)}to{opacity:1;transform:none}}
+.card3d{position:relative;transform-style:preserve-3d;transform:rotateX(8deg) rotateZ(-2deg);transition:transform .6s cubic-bezier(.2,.8,.2,1)}
+.card3d img{width:100%;height:auto;filter:drop-shadow(0 50px 60px rgba(7,6,11,.6)) drop-shadow(0 0 80px rgba(116,40,245,.35))}
+.shine{position:absolute;left:6.6%;top:12.9%;width:87%;height:74.5%;border-radius:4.2%/6.6%;pointer-events:none;background:radial-gradient(circle at var(--sx,50%) var(--sy,30%),rgba(255,255,255,.34),rgba(255,255,255,0) 42%);mix-blend-mode:soft-light}
+.example{position:relative;width:100%;max-width:1000px;margin:clamp(28px,5vh,56px) 0 clamp(56px,9vh,96px);border-radius:22px;overflow:hidden;background:rgba(14,10,28,.82);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);text-align:left}
+.example header{position:static;background:none;backdrop-filter:none;padding:22px clamp(20px,3vw,32px);border-bottom:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;gap:6px}
+.example .mono{color:#C9B6FF}.example header p{font-size:20px;line-height:1.4;color:#F5F5F7;font-weight:500;text-wrap:pretty}
+.ex{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:10px 24px;align-items:center;padding:20px clamp(20px,3vw,32px);border-bottom:1px solid rgba(255,255,255,.08)}
+.ex:last-child{border-bottom:0}.ex>span:first-child{font-size:18px;line-height:1.45;color:#E4E1EC}.ex b{font-weight:600;color:#fff}
+.ex .res{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:17px;line-height:1.4;color:#E4E1EC}
+.tag{padding:5px 12px;border-radius:999px;color:#07060B;font-weight:600;font-size:14px}
+.light{background:#F5F5F7;color:#1D1D1F;padding:clamp(80px,10vw,130px) clamp(18px,4vw,40px)}
+.wrap{max-width:1200px;margin:0 auto}
+.eyebrow{color:#5A21C9}
+h2{font-weight:600;letter-spacing:-.05em;text-wrap:balance;line-height:1}
+.light .lead{font-size:20px;line-height:1.5;color:#48484D}
+.steps{display:flex;flex-direction:column;gap:clamp(64px,8vw,110px);margin-top:clamp(64px,8vw,110px)}
+.step{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,400px),1fr));gap:clamp(28px,4vw,64px);align-items:center}
+@media(min-width:960px){.step:nth-child(even) .copy{order:2}}
+.copy{display:flex;flex-direction:column;gap:18px}
+.num{display:flex;align-items:center;gap:12px;color:#5A21C9;font-size:15px}
+.num i{width:40px;height:40px;border-radius:50%;background:#7428F5;color:#fff;display:flex;align-items:center;justify-content:center;font:600 18px 'Geist',sans-serif;font-style:normal;letter-spacing:0}
+h3{font-size:clamp(34px,3.6vw,50px);font-weight:600;line-height:1.02;letter-spacing:-.045em;text-wrap:balance}
+.copy p{max-width:460px;font-size:19px;line-height:1.55;color:#48484D;text-wrap:pretty}
+.subs{display:flex;flex-direction:column;gap:10px;margin-top:4px}
+.subs div{display:flex;align-items:flex-start;gap:12px;font-size:18px;line-height:1.4;font-weight:500;color:#1D1D1F}
+.subs span{width:24px;height:24px;margin-top:1px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;background:#ECE6FF;color:#5A21C9;font-size:13px;font-weight:700}
+.win{border-radius:14px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.06),0 2px 4px rgba(0,0,0,.04),0 30px 70px -10px rgba(40,20,90,.22)}
+.dark .win{box-shadow:0 0 0 1px rgba(255,255,255,.12),0 50px 120px -20px rgba(116,40,245,.5)}
+.chrome{height:36px;display:flex;align-items:center;gap:7px;padding:0 14px;border-bottom:1px solid #EEEDF1}
+.chrome i{width:10px;height:10px;border-radius:50%;background:#E3E1E8}
+.chrome span{flex:1;text-align:center;font-size:13px;color:#6E6E73;margin-right:44px}
+.shot{position:relative;overflow:hidden;border-radius:0 0 14px 14px}
+.shot img{width:100%;height:auto;transition:opacity .25s,transform .35s cubic-bezier(.2,.8,.2,1)}
+.hl{position:absolute;border-radius:12px;box-shadow:0 0 0 3px #7428F5,0 0 0 9999px rgba(29,29,31,.28);pointer-events:none;transition:all .35s}
+.dark{position:relative;overflow:hidden;background:#07060B;padding:clamp(88px,12vw,140px) clamp(18px,4vw,40px)}
+.dark .halo{position:absolute;left:50%;top:40%;width:1200px;height:800px;margin-left:-600px;border-radius:50%;background:radial-gradient(closest-side,rgba(116,40,245,.28),rgba(116,40,245,0))}
+.tour{position:relative;max-width:1200px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:36px;text-align:center}
+.tour h2{max-width:820px;font-size:clamp(40px,5.4vw,76px);line-height:.98;letter-spacing:-.055em}
+.tabs{width:100%;max-width:900px;display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
+.tabs button{cursor:pointer;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.06);padding:12px 20px;border-radius:999px;color:#F5F5F7;font:500 17px 'Geist',sans-serif;transition:background .3s,color .3s}
+.tabs button[aria-pressed=true]{background:#F5F5F7;color:#07060B;border-color:#F5F5F7}
+.stage{width:100%;display:flex;flex-direction:column;gap:22px;align-items:center;transition:max-width .45s cubic-bezier(.65,0,.35,1);max-width:1000px}
+.stage .win{width:100%}.stage p{max-width:600px;font-size:19px;line-height:1.5;color:#E4E1EC;transition:opacity .25s}.stage p b{color:#fff;font-weight:600}
+.faq{max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:40px}
+.faq h2{font-size:clamp(40px,5vw,64px)}
+.qs{border-top:1px solid #DCDAE2}.q{border-bottom:1px solid #DCDAE2}
+.q button{width:100%;cursor:pointer;border:0;background:transparent;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:24px 0;text-align:left;color:#1D1D1F;font:600 21px/1.35 'Geist',sans-serif;letter-spacing:-.015em}
+.q button i{flex:none;width:36px;height:36px;border-radius:50%;background:#E5E4EA;color:#1D1D1F;display:flex;align-items:center;justify-content:center;font:500 22px 'Geist',sans-serif;font-style:normal}
+.q.open button i{background:#7428F5;color:#fff}
+.q p{display:none;padding:0 56px 26px 0;font-size:19px;line-height:1.6;color:#48484D;text-wrap:pretty}.q.open p{display:block}
+.contact{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:20px;padding:28px clamp(22px,3vw,34px);border-radius:20px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.06),0 20px 50px -20px rgba(40,20,90,.2)}
+.contact div{flex:1 1 320px;display:flex;flex-direction:column;gap:6px}.contact strong{font-size:23px;line-height:1.3;letter-spacing:-.02em}.contact span{font-size:18px;line-height:1.5;color:#48484D}
+.contact a{flex:none;padding:16px 26px;border-radius:999px;background:#1D1D1F;color:#fff;font-weight:600;font-size:17px}.contact a:hover{background:#7428F5;color:#fff}
+.end{position:relative;overflow:hidden;background:#07060B;padding:clamp(100px,14vw,170px) clamp(18px,4vw,40px) clamp(120px,16vw,200px)}
+.end .band1{top:55%;height:900px}
+.end .in{position:relative;max-width:900px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:24px;text-align:center}
+.end h2{font-size:clamp(48px,8vw,116px);line-height:.94;letter-spacing:-.06em}
+.end p{max-width:540px;font-size:20px;line-height:1.5;color:#E4E1EC}
+.end .btn{margin-top:8px;padding:18px 32px;font-size:18px;box-shadow:0 10px 40px rgba(165,133,255,.4)}
+footer{background:#07060B;color:#C7C3D4;padding:32px clamp(18px,4vw,40px);border-top:1px solid rgba(255,255,255,.08)}
+footer .in{max-width:1200px;margin:0 auto;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:16px;font-size:16px}
+footer .brand{display:flex;align-items:center;gap:8px;color:#F5F5F7}footer .brand img{width:24px;height:24px}footer .brand b{font-size:18px;font-weight:600;letter-spacing:-.03em}
+footer nav{display:flex;gap:24px;flex-wrap:wrap}footer nav a{color:#C7C3D4}footer nav a:hover{color:#fff}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div class="notice"><b>Practice mode</b>Everything here uses pretend money. Nothing is ever charged.</div>
+<header id="nav"><div class="bar">
+  <a class="logo" href="#top" aria-label="Flaire home"><img src="assets/mark.png" alt=""><b>Flaire</b></a>
+  <nav class="main" aria-label="Main"><a href="#how">How it works</a><a href="#tour">Take a look</a><a href="#faq">Questions</a></nav>
+  <div class="right"><a class="signin" href="/login">Sign in</a><a class="btn btn-light try" href="/signup">Try it free</a></div>
+</div></header>
+
+<main id="top">
+<section class="hero" id="hero" aria-labelledby="hero-h">
+  <div class="band1" aria-hidden="true"></div><div class="band2" aria-hidden="true"></div><div class="glow" aria-hidden="true"></div>
+  <div class="hero-in">
+    <span class="pill"><span>Works with</span>ChatGPT and Claude</span>
+    <h1 id="hero-h">Your AI spends. <em>You decide.</em></h1>
+    <p class="lede">Flaire gives your AI assistant its own company card, with a spending limit you set. Small things go through. Anything bigger waits for your OK.</p>
+    <div class="ctas"><a class="btn btn-light" href="/signup">Try it free with pretend money</a><a class="btn btn-ghost" href="#how">See how it works</a></div>
+    <span class="fine">No real money. No credit card needed to try.</span>
+  </div>
+  <div class="cardwrap" id="cardwrap"><div class="card3d" id="card3d"><img src="assets/card.webp" width="1536" height="1024" alt="The Flaire card your AI assistant uses"><div class="shine" id="shine" aria-hidden="true"></div></div></div>
+  <div class="example">
+    <header><span class="mono">AN EXAMPLE</span><p>You let your AI order supplies, with a limit of SAR 750 per purchase.</p></header>
+    <div class="ex"><span>It wants <b>SAR 170 of printer ink</b></span><span class="res"><span class="tag" style="background:#7FE0A0">Approved</span>Under your limit, so it goes straight through.</span></div>
+    <div class="ex"><span>It wants <b>SAR 2,200 for a yearly software plan</b></span><span class="res"><span class="tag" style="background:#FFC93C">Asks you</span>Over your limit, so it waits for your yes or no.</span></div>
+    <div class="ex"><span>It wants <b>something from a supplier you blocked</b></span><span class="res"><span class="tag" style="background:#F08A82">Stopped</span>Nothing is charged. You can see that it tried.</span></div>
+  </div>
+</section>
+
+<section class="light" id="how" aria-labelledby="how-h"><div class="wrap">
+  <div style="display:flex;flex-direction:column;gap:14px;max-width:720px">
+    <span class="mono eyebrow">HOW IT WORKS</span>
+    <h2 id="how-h" style="font-size:clamp(40px,5vw,68px)">Three steps. You set it up once.</h2>
+    <p class="lead">If you can use online banking, you can use Flaire.</p>
+  </div>
+  <div class="steps" id="steps"></div>
+</div></section>
+
+<section class="dark" id="tour" aria-labelledby="tour-h"><div class="halo" aria-hidden="true"></div>
+  <div class="tour">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:16px"><span class="mono" style="color:#C9B6FF">TAKE A LOOK</span>
+      <h2 id="tour-h">Every riyal, in plain sight.</h2>
+      <p style="font-size:19px;line-height:1.5;color:#E4E1EC">Pick a screen. These are real screens from a demo company, with pretend money.</p></div>
+    <div class="tabs" id="tabs"></div>
+    <div class="stage" id="stage">
+      <div class="win"><div class="chrome"><i></i><i></i><i></i><span id="tlabel"></span></div>
+        <div class="shot"><img id="timg" alt="" width="1800" height="1125"><div class="hl" id="thl" aria-hidden="true"></div></div></div>
+      <p id="tline"></p>
+    </div>
+  </div>
+</section>
+
+<section class="light" id="faq" aria-labelledby="faq-h"><div class="faq">
+  <div style="display:flex;flex-direction:column;gap:14px"><span class="mono eyebrow">QUESTIONS</span><h2 id="faq-h">Fair questions, straight answers.</h2></div>
+  <div class="qs" id="qs"></div>
+  <div class="contact"><div><strong>Rather talk it through with a person?</strong><span>Write to us and we will help you set it up.</span></div><a href="mailto:emailmaryamimran@gmail.com">Email us</a></div>
+</div></section>
+
+<section class="end" aria-labelledby="end-h"><div class="band1" aria-hidden="true"></div>
+  <div class="in"><h2 id="end-h">Try it with pretend money first.</h2>
+    <p>Set a limit, watch what your AI asks for, and say yes or no. Nothing is charged while you practice.</p>
+    <a class="btn btn-light" href="/signup">Try it free with pretend money</a></div>
+</section>
+</main>
+
+<footer><div class="in">
+  <span class="brand"><img src="assets/mark.png" alt=""><b>Flaire</b></span>
+  <nav aria-label="Footer"><a href="#how">How it works</a><a href="#faq">Questions</a><a href="mailto:emailmaryamimran@gmail.com">Contact</a><a href="/login">Sign in</a></nav>
+  <span style="font-size:15px">Practice mode · Pretend money only</span>
+</div></footer>
+
+<script>
+// Highlight boxes are percentages of the 1440 x 900 screenshots.
+var HL={
+ overview:{l:72.1,t:10.7,w:25.1,h:38.7}, workforce:{l:19.8,t:20.4,w:77.4,h:29.1}, approvals:{l:19.8,t:14.4,w:62.5,h:19.3},
+ activity:{l:19.8,t:14.5,w:77.4,h:7}, activityList:{l:19.8,t:22,w:77.4,h:48}, connections:{l:20.2,t:33.2,w:55,h:8.6},
+ controls:{l:37.3,t:28.9,w:58.8,h:21.5}, identity:{l:21.2,t:50.2,w:31.3,h:34.6}
+};
+var STEPS=[
+ {num:'ADD YOUR AI HELPER',key:'workforce',screen:'AI workforce',title:'Give your AI its own card.',line:'Like hiring a new assistant: it gets a name, its own card, and a person on your team who is responsible for it.',alt:'Flaire screen listing AI helpers and their cards',subs:['Its own name and card','A real person in charge of it','Add one in a single click'],hl:HL.workforce},
+ {num:'SET THE LIMITS',key:'identity',screen:'Marketing AI',title:'Decide how much it can spend.',line:'Pick a limit for each purchase and for the whole month. Anything bigger comes to you first.',alt:'An AI helper card with its monthly budget and limits',subs:['A monthly budget','A limit for each purchase','Suppliers you allow, and ones you block'],hl:HL.identity},
+ {num:'CHECK ANY TIME',key:'activity',screen:'Spending',title:'See every purchase it made.',line:'What it asked for, what Flaire decided, and who said yes. Nothing happens out of sight.',alt:'Flaire spending list showing every purchase request',subs:['Approved by you','Stopped, with nothing charged','Approved automatically, under your limit'],hl:HL.activityList}
+];
+var TOUR=[
+ {label:'Overview',key:'overview',line:'What needs your OK, what has been spent this month, and what just happened.',hl:HL.overview,mw:'1000px'},
+ {label:'AI workforce',key:'workforce',line:'Each helper has its own card and limits. None of them can approve its own spending.',hl:HL.workforce,mw:'1000px'},
+ {label:'Approvals',key:'approvals',line:'When a helper wants to spend more than its limit, it shows up here for your yes or no.',hl:HL.approvals,mw:'1000px'},
+ {label:'Spending',key:'activity',line:'Every purchase, approved, waiting or stopped. Download it for your accountant.',hl:HL.activity,mw:'1000px'},
+ {label:'Connections',key:'connections',line:'Link ChatGPT or Claude. You pick which helper it is, and it can only spend within that helper’s limits.',hl:HL.connections,mw:'1000px'},
+ {label:'Controls',key:'controls',line:'Your rules are checked by Flaire on every purchase. The AI cannot change or skip them.',hl:HL.controls,mw:'1000px'}
+];
+var FAQ=[
+ ['Do I need to be good with computers?','No. If you can use online banking, you can use Flaire. You make a few simple choices once, like how much your AI can spend, and Flaire takes care of the rest.'],
+ ['Can my AI spend more than I allow?','No. Your limits are checked by Flaire on every single purchase, not by the AI. Anything over your limit stops and waits for you.'],
+ ['What happens when it needs my OK?','The purchase waits on your Approvals screen. You see what it wants, how much, and why. Then you say yes or no.'],
+ ['Is my real money at risk while I try it?','No. Flaire is in practice mode: pretend money and simulated cards. Nothing is ever charged, so you can test every rule safely. Real payments are not switched on yet.'],
+ ['Which AI tools does it work with?','ChatGPT and Claude. You connect them in a couple of clicks from the Connections screen, and choose which AI helper each one is.'],
+ ['Can I see everything it asked for?','Yes. Every request, every decision and every approval is saved. You can download the full history for your accountant.']
+];
+function el(t,c,h){var e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e}
+function box(h){return 'left:'+h.l+'%;top:'+h.t+'%;width:'+h.w+'%;height:'+h.h+'%'}
+var steps=document.getElementById('steps');
+STEPS.forEach(function(s,i){
+ var d=el('div','step');
+ d.innerHTML='<div class="copy"><span class="num mono"><i>'+(i+1)+'</i>'+s.num+'</span><h3>'+s.title+'</h3><p>'+s.line+'</p><div class="subs">'+s.subs.map(function(x){return '<div><span>✓</span>'+x+'</div>'}).join('')+'</div></div>'+
+ '<div class="win"><div class="chrome"><i></i><i></i><i></i><span>Flaire: '+s.screen+'</span></div><div class="shot"><img src="assets/'+s.key+'.webp" alt="'+s.alt+'" width="1800" height="1125" loading="lazy"><div class="hl" style="'+box(s.hl)+'" aria-hidden="true"></div></div></div>';
+ steps.appendChild(d)});
+var tabs=document.getElementById('tabs'),timg=document.getElementById('timg'),thl=document.getElementById('thl'),tl=document.getElementById('tline'),tlabel=document.getElementById('tlabel'),cur=-1,tt;
+var rm=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+function paint(i){var t=TOUR[i];timg.src='assets/'+t.key+'.webp';timg.alt='Flaire '+t.label+' screen';thl.style.cssText=box(t.hl);tlabel.textContent='Flaire: '+t.label;tl.innerHTML='<b>'+t.label+'.</b> '+t.line;timg.style.opacity=1;timg.style.transform='none';tl.style.opacity=1}
+function pick(i){if(i===cur)return;cur=i;[].forEach.call(tabs.children,function(b,n){b.setAttribute('aria-pressed',n===i?'true':'false')});
+ if(rm){paint(i);return} clearTimeout(tt);timg.style.opacity=0;timg.style.transform='translateY(8px)';tl.style.opacity=0;tt=setTimeout(function(){paint(i)},170)}
+TOUR.forEach(function(t,i){var b=el('button','',t.label);b.setAttribute('aria-pressed','false');b.onclick=function(){pick(i)};tabs.appendChild(b)});
+pick(0);
+var qs=document.getElementById('qs');
+FAQ.forEach(function(f,i){var d=el('div','q'+(i===0?' open':''));var b=el('button','','<span>'+f[0]+'</span><i>'+(i===0?'-':'+')+'</i>');b.setAttribute('aria-expanded',i===0?'true':'false');
+ b.onclick=function(){var open=d.classList.toggle('open');b.setAttribute('aria-expanded',open);b.lastChild.textContent=open?'-':'+'};
+ d.appendChild(b);d.appendChild(el('p','',f[1]));qs.appendChild(d)});
+var nav=document.getElementById('nav');function sc(){nav.classList.toggle('on',scrollY>30)}addEventListener('scroll',sc,{passive:true});sc();
+var hero=document.getElementById('hero'),c3=document.getElementById('card3d'),sh=document.getElementById('shine');
+if(!rm&&matchMedia('(min-width:960px)').matches){var raf;hero.addEventListener('mousemove',function(e){var r=hero.getBoundingClientRect(),nx=(e.clientX-r.left)/r.width-.5,ny=(e.clientY-r.top)/r.height-.5;cancelAnimationFrame(raf);raf=requestAnimationFrame(function(){c3.style.transform='rotateX('+(8-ny*8).toFixed(2)+'deg) rotateY('+(nx*10).toFixed(2)+'deg) rotateZ(-2deg)';sh.style.setProperty('--sx',(50+nx*90)+'%');sh.style.setProperty('--sy',(30+ny*80)+'%')})});
+ hero.addEventListener('mouseleave',function(){c3.style.transform='rotateX(8deg) rotateZ(-2deg)'})}
+</script>
+</body>
+</html>

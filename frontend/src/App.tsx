@@ -17,7 +17,6 @@ import OverviewPage from './pages/OverviewPage'
 import ApprovalsPage from './pages/ApprovalsPage'
 import ConnectionsPage from './pages/ConnectionsPage'
 import WelcomePage from './pages/WelcomePage'
-import LandingPage from './pages/LandingPage'
 import SetupPage from './pages/SetupPage'
 import AuthCallbackPage from './pages/AuthCallbackPage'
 import { hasAdminView } from './lib/view'
@@ -43,7 +42,7 @@ function RequireAuth() {
   const location = useLocation()
   if (loading) return <PageLoader />
   if (!isAuthenticated) {
-    if (location.pathname === '/') return <LandingPage />
+    if (location.pathname === '/') { window.location.replace('/site/'); return <PageLoader /> }
     return <Navigate to="/login" replace state={{ from: location.pathname }} />
   }
   if (setupRequired && location.pathname !== '/setup' && location.pathname !== '/welcome') return <Navigate to="/setup" replace />
