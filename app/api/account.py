@@ -134,21 +134,37 @@ class DeleteIn(BaseModel):
 
 
 def _delete_company(db: Session, cid: int) -> None:
-    db.query(OAuthCode).filter(OAuthCode.company_id == cid).delete()
-    db.query(OAuthToken).filter(OAuthToken.company_id == cid).delete()
-    db.query(Notification).filter(Notification.company_id == cid).delete()
-    db.query(AgentRun).filter(AgentRun.company_id == cid).delete()
-    db.query(Transaction).filter(Transaction.company_id == cid).delete()
-    db.query(PurchaseRequest).filter(PurchaseRequest.company_id == cid).delete()
-    db.query(Agent).filter(Agent.company_id == cid).delete()   # agents point at their card, so they go first
-    db.query(Card).filter(Card.company_id == cid).delete()
-    db.query(Department).filter(Department.company_id == cid).delete()
-    db.query(AuditEntry).filter(AuditEntry.company_id == cid).delete()
-    for u in db.query(User).filter(User.company_id == cid).all():
-        db.query(PushSubscription).filter(PushSubscription.user_id == u.id).delete()
-        db.query(PasswordReset).filter(PasswordReset.user_id == u.id).delete()
-    db.query(User).filter(User.company_id == cid).delete()
-    db.query(Company).filter(Company.id == cid).delete()
+    """Remove a company and everything that hangs off it, children first (Postgres enforces foreign keys)."""
+    from app.core.db import Base
+    user_ids = [u.id for u in db.query(User.id).filter(User.company_id == cid).all()]
+    for table in reversed(Base.metadata.sorted_tables):
+        cols = table.c
+        if table.name == "companies":
+            db.execute(table.delete().where(cols.id == cid))
+        elif "company_id" in cols:
+            db.execute(table.delete().where(cols.company_id == cid))
+        elif "user_id" in cols and user_ids:
+            db.execute(table.delete().where(cols.user_id.in_(user_ids)))
+
+
+def _release_user_refs(db: Session, uid: int, fallback_id: int | None) -> None:
+    """Detach a leaving user from rows that point at them: hand them to another owner, or drop the row when it is only theirs."""
+    from app.core.db import Base
+    for table in Base.metadata.sorted_tables:
+        if table.name in ("users", "companies"):
+            continue
+        for col in table.c:
+            fks = list(col.foreign_keys)
+            if not fks or fks[0].column.table.name != "users":
+                continue
+            if table.name in ("memberships", "delegations", "push_subscriptions", "password_resets", "notifications", "oauth_tokens", "oauth_codes"):
+                db.execute(table.delete().where(col == uid))
+            elif col.nullable:
+                db.execute(table.update().where(col == uid).values({col.name: fallback_id}))
+            elif fallback_id is not None:
+                db.execute(table.update().where(col == uid).values({col.name: fallback_id}))
+            else:
+                db.execute(table.delete().where(col == uid))
 
 
 @router.delete("/account", tags=["account"])
@@ -174,6 +190,7 @@ def delete_account(body: DeleteIn, user: User = Depends(get_current_user), db: S
             db.query(Agent).filter(Agent.owner_user_id == user.id).update({"owner_user_id": fallback.id if fallback else None})
             db.query(Transaction).filter(Transaction.accountable_user_id == user.id).update({"accountable_user_id": fallback.id if fallback else None})
             db.query(PurchaseRequest).filter(PurchaseRequest.approved_by_id == user.id).update({"approved_by_id": None})
+            _release_user_refs(db, user.id, fallback.id if fallback else None)
             audit.record(db, cid, actor_type="user", actor_id=user.id, actor_name=user.full_name, event="account.deleted", details={})
             db.query(User).filter(User.id == user.id).delete()
     else:
