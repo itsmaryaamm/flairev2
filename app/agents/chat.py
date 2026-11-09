@@ -386,7 +386,9 @@ def _purchase_flow(db: Session, company: Company, agent: Agent, draft: dict, tex
 ASSISTANT_SYSTEM = """You are the Flaire assistant for {name} ({role}) at {company}. Flaire is the finance department for the company's AI employees.
 You help the owner understand and control spending in plain language. You can read everything and you can PREPARE an approval or a rejection, but you never execute one: the app asks the person for their password. Be brief, specific, and honest. Use SAR. Today is {today}.
 When asked to approve or reject something, call prepare_decision with the request id; the app takes it from there. If there are several candidates, ask which one.
-If asked about anything you cannot see, say so."""
+If asked about anything you cannot see, say so.
+{product}
+Style: plain, brief, no long dashes (no em dash or en dash). Never say a sandbox purchase was paid."""
 
 ASSISTANT_TOOLS = [
     {"name": "pending_approvals", "description": "Requests waiting for a human.", "input_schema": {"type": "object", "properties": {}}},
@@ -438,8 +440,20 @@ def assistant_chat(db: Session, company: Company, user: User, history: list[dict
     """history: prior [{role, content}] text turns from the client. Returns {reply, actions, transcript}."""
     actions: list[dict] = []
     transcript = [{"role": "user", "content": message}]
+    if settings.gemini_enabled:
+        from app.agents import gemini
+        from app.agents.knowledge import PRODUCT
+        system = ASSISTANT_SYSTEM.format(name=user.full_name, role=user.role, company=company.name, today=datetime.now(timezone.utc).date().isoformat(), product=PRODUCT)
+        hist = [{"role": h["role"], "content": h["content"]} for h in history if h.get("role") in ("user", "assistant") and h.get("content")][-12:]
+        try:
+            reply = gemini.chat(system, hist, message, ASSISTANT_TOOLS, lambda n, a: assistant_tool(db, company, user, n, a, actions), max_tokens=900)
+            transcript.append({"role": "assistant", "content": reply})
+            return {"reply": reply, "actions": actions, "transcript": transcript, "mode": "gemini"}
+        except Exception as exc:
+            transcript.append({"role": "system", "content": f"model unavailable: {str(exc)[:80]}"})
     if settings.claude_enabled:
-        system = ASSISTANT_SYSTEM.format(name=user.full_name, role=user.role, company=company.name, today=datetime.now(timezone.utc).date().isoformat())
+        from app.agents.knowledge import PRODUCT
+        system = ASSISTANT_SYSTEM.format(name=user.full_name, role=user.role, company=company.name, today=datetime.now(timezone.utc).date().isoformat(), product=PRODUCT)
         msgs = [{"role": h["role"], "content": h["content"]} for h in history if h.get("role") in ("user", "assistant") and h.get("content")][-12:]
         msgs.append({"role": "user", "content": message})
         try:

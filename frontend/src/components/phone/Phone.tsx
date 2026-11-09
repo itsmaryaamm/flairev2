@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
+import { ThemeToggle } from '../ThemeToggle'
 import { sar } from '../../lib/money'
 import { useT } from '../../lib/i18n'
 import { useAuth } from '../../lib/auth'
@@ -31,7 +32,7 @@ export function PhoneGreeting() {
       </div>
       <div className="flex items-center gap-2 shrink-0 pt-0.5">
         <SandboxBadge />
-        <img src="/flaire-mark.png" alt="" className="h-7 w-7 object-contain" />
+        <ThemeToggle className="h-9 w-9" />
       </div>
     </header>
   )

@@ -13,6 +13,7 @@ import { useKillSwitch } from './KillSwitchPanel'
 import { AskFlaire } from './AskFlaire'
 import { UserRow } from './AccountMenu'
 import { CommandPalette } from './CommandPalette'
+import { ThemeToggle } from './ThemeToggle'
 
 type NavItem = { to: string; label: string; icon: LucideIcon; end?: boolean; admin?: boolean }
 
@@ -197,18 +198,19 @@ export function Layout() {
 
         <div className="flex-1 flex flex-col min-w-0">
           {/* Desktop header */}
-          <header className="hidden md:flex sticky top-[3px] z-30 items-center gap-4 bg-[rgba(247,245,241,.86)] backdrop-blur-[14px] px-10 py-3.5">
+          <header className="hidden md:flex sticky top-[3px] z-30 items-center gap-4 bg-canvas/85 backdrop-blur-[14px] px-10 py-3.5">
             <div className="min-w-0 flex-1">
               <h1 className="font-display text-[26px] leading-tight font-semibold tracking-tightest truncate">{head.title}</h1>
-              <p className="text-[14px] text-[#6F6878] truncate">{head.sub}</p>
+              <p className="text-[14px] text-neutral-500 truncate">{head.sub}</p>
             </div>
             <span title="Everything here is simulated. No real money moves, and no real card is charged." className="rounded-full bg-[#FBF0D9] text-[#5E4300] text-[13px] font-semibold px-3.5 h-9 inline-flex items-center gap-2 whitespace-nowrap">
               <span className="h-2 w-2 rounded-full bg-[#C98A00]" /> Sandbox · simulated
             </span>
-            <button type="button" onClick={() => setPalette(true)} className="hidden lg:inline-flex items-center gap-2 h-10 w-[230px] rounded-xl border border-[#E2DED5] bg-white px-3 text-[14px] text-neutral-500 hover:border-brand">
+            <button type="button" onClick={() => setPalette(true)} className="hidden lg:inline-flex items-center gap-2 h-10 w-[230px] rounded-xl border border-line-strong bg-white px-3 text-[14px] text-neutral-500 hover:border-brand">
               <Search className="h-4 w-4" /> <span className="flex-1 text-start">Ask Flaire</span>
-              <kbd className="rounded bg-[#F1EEE8] px-1.5 py-0.5 text-[11px] font-semibold text-neutral-600">⌘K</kbd>
+              <kbd className="rounded bg-lavender-deep px-1.5 py-0.5 text-[11px] font-semibold text-neutral-600">⌘K</kbd>
             </button>
+            <ThemeToggle />
             <NavLink to="/connections" className="btn-primary h-11 px-5 rounded-xl">
               <Plus className="h-4 w-4" /> Connect AI
             </NavLink>

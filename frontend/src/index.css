@@ -2,6 +2,85 @@
 @tailwind components;
 @tailwind utilities;
 
+:root{
+  --c-canvas: 247 245 241;
+  --c-ink: 22 17 43;
+  --c-line: 227 223 238;
+  --c-line-strong: 214 208 230;
+  --c-brand-light: 241 232 253;
+  --c-brand-tint: 243 239 250;
+  --c-lavender: 247 244 251;
+  --c-lavender-deep: 241 237 247;
+  --c-mint: 227 246 234;
+  --c-success-tint: 227 246 234;
+  --c-danger-tint: 253 230 230;
+  --c-warn-tint: 253 240 213;
+  --c-n50: 251 250 253;
+  --c-n100: 247 244 251;
+  --c-n200: 232 227 240;
+  --c-n300: 224 216 236;
+  --c-n400: 138 128 160;
+  --c-n500: 138 128 160;
+  --c-n600: 74 61 99;
+  --c-n700: 74 61 99;
+  --c-n800: 42 31 69;
+  --c-n900: 26 11 51;
+  --c-r50: 253 230 230;
+  --c-r100: 253 230 230;
+  --c-r200: 247 196 198;
+  --c-r300: 240 160 164;
+  --c-r700: 179 36 43;
+  --c-a50: 253 240 213;
+  --c-a100: 253 240 213;
+  --c-a300: 242 210 138;
+  --c-a700: 138 90 0;
+  --c-a800: 138 90 0;
+  --c-a900: 107 70 0;
+}
+html.dark{
+  color-scheme: dark;
+  --c-canvas: 15 13 26;
+  --c-ink: 240 237 248;
+  --c-line: 43 38 64;
+  --c-line-strong: 58 52 84;
+  --c-brand-light: 42 32 80;
+  --c-brand-tint: 35 27 61;
+  --c-lavender: 23 19 42;
+  --c-lavender-deep: 28 23 51;
+  --c-mint: 18 51 36;
+  --c-success-tint: 18 51 36;
+  --c-danger-tint: 58 21 25;
+  --c-warn-tint: 58 43 12;
+  --c-n50: 21 18 42;
+  --c-n100: 23 19 42;
+  --c-n200: 43 38 64;
+  --c-n300: 52 46 77;
+  --c-n400: 154 145 178;
+  --c-n500: 154 145 178;
+  --c-n600: 196 188 216;
+  --c-n700: 196 188 216;
+  --c-n800: 228 223 240;
+  --c-n900: 240 237 248;
+  --c-r50: 58 21 25;
+  --c-r100: 58 21 25;
+  --c-r200: 90 34 39;
+  --c-r300: 122 48 54;
+  --c-r700: 242 139 144;
+  --c-a50: 58 43 12;
+  --c-a100: 58 43 12;
+  --c-a300: 107 79 20;
+  --c-a700: 242 194 90;
+  --c-a800: 242 194 90;
+  --c-a900: 245 212 136;
+}
+html.dark .bg-white{background-color:#17132A}
+html.dark [class*="bg-white/"]{background-color:rgb(23 19 42 / .88)}
+html.dark .bg-ink{background-color:#7B2FF2}
+html.dark .hover\:bg-ink:hover{background-color:#7B2FF2}
+html.dark .border-white,html.dark .border-white\/60{border-color:#2B2640}
+html.dark input,html.dark select,html.dark textarea{color-scheme:dark}
+html.dark img.keep-light{filter:none}
+html.dark .shadow-2xl{box-shadow:0 20px 60px rgba(0,0,0,.6)}
 @layer base {
   html {
     font-family: 'IBM Plex Sans', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
@@ -114,3 +193,31 @@
   }
   .btn-secondary.on-ticket { @apply bg-white border-[#CDBBF0]; }
 }
+html.dark [class*="bg-ink/"]{background-color:rgb(0 0 0 / .62)}
+html.dark .bg-\[\#EFECE5\]{background-color:#1A1630}
+html.dark .bg-\[\#F1E6FD\]{background-color:#2A2050}
+html.dark .bg-\[\#F1E8FF\]{background-color:#2A2050}
+html.dark .bg-\[\#FAF8F4\]{background-color:#1B1730}
+html.dark .bg-\[\#EFEBE4\]{background-color:#2B2640}
+html.dark .bg-\[\#E4E0D7\]{background-color:#2B2640}
+html.dark .bg-\[\#D9D4E3\]{background-color:#3A3454}
+html.dark .bg-\[\#FBF0D9\]{background-color:#3A2B0C}
+html.dark .border-\[\#E2DED5\]{border-color:#2B2640}
+html.dark .border-\[\#EFEBE4\]{border-color:#2B2640}
+html.dark .border-\[\#CDBBF0\]{border-color:#4A3A80}
+html.dark .text-\[\#5B2A9E\]{color:#C9B6FF}
+html.dark .text-\[\#2E0F6B\]{color:#F0EDF8}
+html.dark .text-\[\#9A4A06\]{color:#F2A55A}
+html.dark .text-\[\#8A5600\]{color:#F2C25A}
+html.dark .text-\[\#3B2A00\]{color:#F2C25A}
+html.dark .text-\[\#5E4300\]{color:#F2C25A}
+html.dark .text-\[\#0F7A55\]{color:#4ADE80}
+html.dark .text-\[\#17835F\]{color:#4ADE80}
+html.dark .text-\[\#C2362B\]{color:#F28B90}
+html.dark .text-\[\#B3202A\]{color:#F28B90}
+html.dark .text-\[\#8A8494\]{color:#9A91B2}
+html.dark .text-\[\#6F6878\]{color:#9A91B2}
+html.dark .text-\[\#443E50\]{color:#C4BCD8}
+html.dark aside .font-semibold,html.dark aside a{color:inherit}
+html.dark .ticket{background:#2A2050;color:#F0EDF8}
+html.dark .ticket .text-neutral-500,html.dark .ticket .text-neutral-600{color:#B9AFD3}

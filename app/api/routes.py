@@ -825,3 +825,42 @@ def agent_chat(agent_id: int, body: ChatIn, user: User = Depends(get_current_use
 def assistant(body: ChatIn, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     from app.agents.chat import assistant_chat
     return assistant_chat(db, company_of(user, db), user, body.history or [], body.message)
+
+
+# ---- public website chatbot (no login) ----
+import time as _time
+from collections import defaultdict as _dd
+
+_PUB_HITS: dict[str, list[float]] = _dd(list)
+
+
+class PublicChatIn(BaseModel):
+    message: str = Field(min_length=1, max_length=600)
+    history: list[dict] | None = None
+
+
+_PUB_FALLBACK = ("Flaire gives your AI assistant its own company card with limits you set. Small purchases go through, bigger ones wait for your OK, "
+                 "and blocked ones are stopped. Right now it is a sandbox, so everything is simulated and no real money moves. "
+                 "You can try it free at /signup, or email the team for anything else.")
+
+
+@router.post("/public/chat", tags=["public"])
+def public_chat(body: PublicChatIn, request: Request):
+    from app.agents import gemini
+    from app.agents.knowledge import PUBLIC_SYSTEM
+    ip = (request.headers.get("x-forwarded-for") or (request.client.host if request.client else "x")).split(",")[0].strip()
+    now = _time.time()
+    hits = [t for t in _PUB_HITS[ip] if now - t < 600]
+    if len(hits) >= 20:
+        raise HTTPException(429, "You are asking a lot. Try again in a few minutes.")
+    hits.append(now)
+    _PUB_HITS[ip] = hits
+    if len(_PUB_HITS) > 5000:
+        _PUB_HITS.clear()
+    if not settings.gemini_enabled:
+        return {"reply": _PUB_FALLBACK, "mode": "static"}
+    hist = [{"role": h["role"], "content": str(h["content"])[:600]} for h in (body.history or []) if h.get("role") in ("user", "assistant") and h.get("content")][-8:]
+    try:
+        return {"reply": gemini.chat(PUBLIC_SYSTEM, hist, body.message, max_tokens=400), "mode": "gemini"}
+    except Exception:
+        return {"reply": _PUB_FALLBACK, "mode": "static"}

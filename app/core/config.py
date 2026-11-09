@@ -40,6 +40,8 @@ class Settings(BaseSettings):
 
     # Claude AI employees
     anthropic_api_key: str | None = None
+    gemini_api_key: str | None = None
+    gemini_model: str = "gemini-2.5-flash"
     claude_model: str = "claude-sonnet-4-5"
 
     # Lithic sandbox (optional). Get a sandbox key at https://dashboard.lithic.com
@@ -72,6 +74,10 @@ class Settings(BaseSettings):
     @property
     def platform_admin_list(self) -> list[str]:
         return [e.strip().lower() for e in self.platform_admin_emails.split(",") if e.strip()]
+
+    @property
+    def gemini_enabled(self) -> bool:
+        return bool(self.gemini_api_key)
 
     @property
     def claude_enabled(self) -> bool:

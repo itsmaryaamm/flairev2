@@ -140,3 +140,18 @@ def test_profile_edit_name_and_photo():
     r = c.patch("/api/v1/auth/me", json={"remove_avatar": True}, headers=h)
     assert r.json()["user"]["avatar"] is None
     assert c.get("/api/v1/auth/me", headers=h).json()["user"]["full_name"] == "New Name"
+
+
+def test_public_chat_static_without_key_and_gemini_tools_schema(monkeypatch):
+    from app.api.routes import settings
+    from app.agents import gemini
+    monkeypatch.setattr(settings, "gemini_api_key", None)
+    r = client.post("/api/v1/public/chat", json={"message": "what is flaire?"})
+    assert r.status_code == 200 and r.json()["mode"] == "static"
+    monkeypatch.setattr(settings, "gemini_api_key", "test-key")
+    monkeypatch.setattr(gemini, "generate", lambda body: {"candidates": [{"content": {"parts": [{"text": "It is a sandbox."}]}}]})
+    r = client.post("/api/v1/public/chat", json={"message": "is it real money?", "history": [{"role": "user", "content": "hi"}, {"role": "assistant", "content": "hello"}]})
+    assert r.json() == {"reply": "It is a sandbox.", "mode": "gemini"}
+    from app.agents.chat import ASSISTANT_TOOLS
+    d = gemini.to_declarations(ASSISTANT_TOOLS)[0]["functionDeclarations"]
+    assert all("default" not in str(x) for x in d) and d[0]["name"] == "pending_approvals" and "parameters" not in d[0]
