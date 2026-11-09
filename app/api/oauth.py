@@ -103,6 +103,20 @@ def register_client(request: Request, body: dict, db: Session = Depends(get_db))
             "token_endpoint_auth_method": client.token_endpoint_auth_method, "grant_types": ["authorization_code", "refresh_token"], "response_types": ["code"]}
 
 
+# First-party AI apps. Their client id is a URL on one of these hosts and the redirect must be an https URL on one of them too.
+# Safe because the code is bound to PKCE and only goes to these hosts after the person signs in here.
+TRUSTED_HOSTS = {"chatgpt.com", "www.chatgpt.com", "openai.com", "platform.openai.com", "claude.ai", "claude.com"}
+
+
+def _trusted_host_redirect(client_id: str, redirect_uri: str) -> bool:
+    try:
+        c, r = urlparse(client_id), urlparse(redirect_uri)
+        return (c.scheme == "https" and r.scheme == "https" and (c.hostname or "") in TRUSTED_HOSTS and (r.hostname or "") in TRUSTED_HOSTS
+                and not r.username and not r.fragment)
+    except Exception:
+        return False
+
+
 def _allowed_redirect(db: Session, client_id: str, redirect_uri: str) -> bool:
     client = db.query(OAuthClient).filter(OAuthClient.client_id == client_id).first()
     if client:
@@ -115,7 +129,7 @@ def _allowed_redirect(db: Session, client_id: str, redirect_uri: str) -> bool:
                 return True
         except Exception:
             pass
-        return redirect_uri in KNOWN_CALLBACKS
+        return redirect_uri in KNOWN_CALLBACKS or _trusted_host_redirect(client_id, redirect_uri)
     return False
 
 

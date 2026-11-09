@@ -155,3 +155,13 @@ def test_public_chat_static_without_key_and_gemini_tools_schema(monkeypatch):
     from app.agents.chat import ASSISTANT_TOOLS
     d = gemini.to_declarations(ASSISTANT_TOOLS)[0]["functionDeclarations"]
     assert all("default" not in str(x) for x in d) and d[0]["name"] == "pending_approvals" and "parameters" not in d[0]
+
+
+def test_chatgpt_redirect_trusted_host_fallback(monkeypatch):
+    from app.api import oauth
+    monkeypatch.setattr(oauth.safe_http, "fetch_json", lambda u: {"client_id": u, "redirect_uris": ["https://chatgpt.com/other"]})
+    cid = "https://chatgpt.com/oauth/h-abc/client.json"
+    assert oauth._trusted_host_redirect(cid, "https://chatgpt.com/connector/oauth/xyz123")
+    assert not oauth._trusted_host_redirect(cid, "https://evil.example/cb")
+    assert not oauth._trusted_host_redirect("https://evil.example/c.json", "https://chatgpt.com/connector/oauth/x")
+    assert not oauth._trusted_host_redirect(cid, "http://chatgpt.com/x")

@@ -84,6 +84,7 @@ export default function App() {
         <Route element={<PublicOnly />}>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/signup" element={<Navigate to="/register" replace />} />
           <Route path="/forgot" element={<ForgotPage />} />
         </Route>
         {/* Not PublicOnly: in Supabase mode the recovery link signs the user in before they choose a password. */}

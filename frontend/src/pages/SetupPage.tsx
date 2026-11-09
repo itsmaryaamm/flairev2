@@ -70,6 +70,7 @@ function StepFrame({
   onBack,
   continueLabel,
   secondary,
+  noContinue = false,
   busy = false,
 }: {
   title: string
@@ -81,6 +82,8 @@ function StepFrame({
   continueLabel?: string
   /** Optional second action (for example "Do this later"). */
   secondary?: { label: string; onClick: () => void } | null
+  /** The step moves on by itself once its own action is done, so no Continue button. */
+  noContinue?: boolean
   busy?: boolean
 }) {
   const t = useT()
@@ -103,9 +106,11 @@ function StepFrame({
               {secondary.label}
             </button>
           )}
-          <button type="button" className="btn-primary" onClick={onContinue} disabled={!canContinue || busy}>
-            {continueLabel ?? t('common.continue')} <ArrowRight className="h-4 w-4 rtl-flip" />
-          </button>
+          {!noContinue && (
+            <button type="button" className="btn-primary" onClick={onContinue} disabled={!canContinue || busy}>
+              {continueLabel ?? t('common.continue')} <ArrowRight className="h-4 w-4 rtl-flip" />
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -176,6 +181,7 @@ function CompanyStep({ status, onBack, advance }: StepProps) {
       title={t('setup.companyTitle')}
       why={t('setup.companyWhy')}
       canContinue={done}
+      noContinue={!done}
       onContinue={() => void advance()}
       onBack={onBack}
       busy={busy}
@@ -212,7 +218,7 @@ function TwoFaStep({ status, onBack, advance }: StepProps) {
   const { user } = useAuth()
   const done = stepDone('twofa', status) || !!user?.totp_enabled
   return (
-    <StepFrame title={t('setup.twofaTitle')} why={t('setup.twofaWhy')} canContinue={done} onContinue={() => void advance()} onBack={onBack}>
+    <StepFrame title={t('setup.twofaTitle')} why={t('setup.twofaWhy')} canContinue={done} noContinue={!done} onContinue={() => void advance()} onBack={onBack}>
       <div className="flex items-center gap-2 rounded-input border border-line bg-lavender px-3 py-2 text-xs text-neutral-600 mb-4">
         <ShieldCheck className="h-4 w-4 text-brand shrink-0" /> {t('setup.twofaRequiredLine')}
       </div>
@@ -253,6 +259,7 @@ function CardStep({ status, onBack, advance, refreshStatus }: StepProps) {
       title={t('setup.cardTitle')}
       why={t('setup.cardWhy')}
       canContinue={configured}
+      noContinue={!configured}
       onContinue={() => void advance()}
       onBack={onBack}
       secondary={configured ? null : { label: t('welcome.doLater'), onClick: () => void advance() }}
@@ -361,6 +368,7 @@ function EmployeeStep({ status, onBack, advance }: StepProps) {
       canContinue={already || !!created}
       onContinue={() => void advance()}
       onBack={onBack}
+      noContinue={!already}
       busy={busy}
     >
       {already || created ? (
@@ -402,48 +410,30 @@ function EmployeeStep({ status, onBack, advance }: StepProps) {
 function ConnectStep({ status, onBack, advance, refreshStatus }: StepProps) {
   const t = useT()
   const connected = !!status?.steps.connected
-  const [checking, setChecking] = useState(false)
-  const [notYet, setNotYet] = useState(false)
-  const stop = useRef(false)
+  const advanced = useRef(false)
 
+  // Watch for the connection quietly and move on the moment it lands. No button to press.
   useEffect(() => {
-    stop.current = false
-    return () => {
-      stop.current = true
-    }
-  }, [])
-
-  const check = async () => {
-    setChecking(true)
-    setNotYet(false)
-    // Poll for up to about 45 seconds: the OAuth handshake in Claude or ChatGPT takes a moment to land.
-    for (let i = 0; i < 15 && !stop.current; i++) {
+    if (connected) return
+    const timer = window.setInterval(async () => {
       const s = await refreshStatus()
-      if (s?.steps.connected) {
-        setChecking(false)
+      if (s?.steps.connected && !advanced.current) {
+        advanced.current = true
         await advance()
-        return
       }
-      await new Promise((r) => setTimeout(r, 3000))
-    }
-    if (!stop.current) {
-      setChecking(false)
-      setNotYet(true)
-    }
-  }
+    }, 3000)
+    return () => window.clearInterval(timer)
+  }, [connected, refreshStatus, advance])
 
   return (
-    <StepFrame title={t('setup.connectTitle')} why={t('setup.connectWhy')} canContinue={connected} onContinue={() => void advance()} onBack={onBack} busy={checking}>
+    <StepFrame title={t('setup.connectTitle')} why={t('setup.connectWhy')} canContinue={connected} onContinue={() => void advance()} onBack={onBack} noContinue={!connected}>
       {connected ? (
         <DoneNote>{t('setup.connectDone')}</DoneNote>
       ) : (
         <>
           <ConnectAiPanel />
-          <div className="mt-5">
-            <button type="button" className="btn-primary w-full" onClick={check} disabled={checking}>
-              {checking ? <Spinner /> : <Check className="h-4 w-4" />} {checking ? t('setup.checkingConnection') : t('welcome.connectedIt')}
-            </button>
-            {notYet && <p className="text-xs text-warn mt-2">{t('setup.notConnectedYet')}</p>}
+          <div className="mt-5 flex items-center gap-3 rounded-card bg-lavender px-4 py-3 text-sm text-neutral-600">
+            <Spinner /> {t('guide.waiting')}
           </div>
         </>
       )}

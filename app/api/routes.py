@@ -837,11 +837,12 @@ _PUB_HITS: dict[str, list[float]] = _dd(list)
 class PublicChatIn(BaseModel):
     message: str = Field(min_length=1, max_length=600)
     history: list[dict] | None = None
+    lang: str | None = None
 
 
 _PUB_FALLBACK = ("Flaire gives your AI assistant its own company card with limits you set. Small purchases go through, bigger ones wait for your OK, "
                  "and blocked ones are stopped. Right now it is a sandbox, so everything is simulated and no real money moves. "
-                 "You can try it free at /signup, or email the team for anything else.")
+                 "You can try it free at /register, or email the team for anything else.")
 
 
 @router.post("/public/chat", tags=["public"])
@@ -861,6 +862,6 @@ def public_chat(body: PublicChatIn, request: Request):
         return {"reply": _PUB_FALLBACK, "mode": "static"}
     hist = [{"role": h["role"], "content": str(h["content"])[:600]} for h in (body.history or []) if h.get("role") in ("user", "assistant") and h.get("content")][-8:]
     try:
-        return {"reply": gemini.chat(PUBLIC_SYSTEM, hist, body.message, max_tokens=400), "mode": "gemini"}
+        return {"reply": gemini.chat(PUBLIC_SYSTEM + (" Reply in Arabic." if body.lang == "ar" else ""), hist, body.message, max_tokens=400), "mode": "gemini"}
     except Exception:
         return {"reply": _PUB_FALLBACK, "mode": "static"}

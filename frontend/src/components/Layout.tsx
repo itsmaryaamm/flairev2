@@ -14,6 +14,7 @@ import { AskFlaire } from './AskFlaire'
 import { UserRow } from './AccountMenu'
 import { CommandPalette } from './CommandPalette'
 import { ThemeToggle } from './ThemeToggle'
+import { LanguageSwitch } from '../lib/i18n'
 
 type NavItem = { to: string; label: string; icon: LucideIcon; end?: boolean; admin?: boolean }
 
@@ -210,6 +211,7 @@ export function Layout() {
               <Search className="h-4 w-4" /> <span className="flex-1 text-start">Ask Flaire</span>
               <kbd className="rounded bg-lavender-deep px-1.5 py-0.5 text-[11px] font-semibold text-neutral-600">⌘K</kbd>
             </button>
+            <LanguageSwitch className="h-10 items-center" />
             <ThemeToggle />
             <NavLink to="/connections" className="btn-primary h-11 px-5 rounded-xl">
               <Plus className="h-4 w-4" /> Connect AI

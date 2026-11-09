@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
 import { ThemeToggle } from '../ThemeToggle'
 import { sar } from '../../lib/money'
-import { useT } from '../../lib/i18n'
+import { useT, LanguageSwitch } from '../../lib/i18n'
 import { useAuth } from '../../lib/auth'
 import { timeAgo } from '../../lib/useFetch'
 import type { PurchaseRequest } from '../../types'
@@ -30,9 +30,12 @@ export function PhoneGreeting() {
         <div className="text-sm text-neutral-500 truncate">{company?.name}</div>
         <h1 className="font-display text-[30px] leading-[1.1] font-bold tracking-tightest mt-1">{t(key, { name: first })}</h1>
       </div>
-      <div className="flex items-center gap-2 shrink-0 pt-0.5">
+      <div className="flex flex-col items-end gap-2 shrink-0 pt-0.5">
+        <div className="flex items-center gap-2">
+          <LanguageSwitch className="h-9 items-center" />
+          <ThemeToggle className="h-9 w-9" />
+        </div>
         <SandboxBadge />
-        <ThemeToggle className="h-9 w-9" />
       </div>
     </header>
   )
