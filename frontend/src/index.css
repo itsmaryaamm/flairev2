@@ -221,3 +221,6 @@ html.dark .text-\[\#443E50\]{color:#C4BCD8}
 html.dark aside .font-semibold,html.dark aside a{color:inherit}
 html.dark .ticket{background:#2A2050;color:#F0EDF8}
 html.dark .ticket .text-neutral-500,html.dark .ticket .text-neutral-600{color:#B9AFD3}
+
+/* The wordmark is near-black, so swap in the light version on dark backgrounds */
+html.dark img[src="/flaire-logo.png"] { content: url(/flaire-logo-dark.png); }

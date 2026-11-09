@@ -32,7 +32,7 @@ export function GetTheApp({ always = false }: { always?: boolean } = {}) {
   const [qr, setQr] = useState<string>('')
   useEffect(() => {
     if (phone) return
-    QRCode.toDataURL(window.location.origin + '/?app=1', { margin: 1, width: 220, color: { dark: '#16112B', light: '#FFFFFF' } })
+    QRCode.toDataURL(window.location.origin + '/login?app=1', { margin: 1, width: 220, color: { dark: '#16112B', light: '#FFFFFF' } })
       .then(setQr)
       .catch(() => undefined)
   }, [phone])

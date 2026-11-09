@@ -20,7 +20,7 @@ type StepId = 'company' | 'twofa' | 'card' | 'employee' | 'connect' | 'test' | '
 
 const ALL_STEPS: StepId[] = ['company', 'twofa', 'card', 'employee', 'connect', 'test', 'finish']
 const APPROVER_ROLES = ['owner', 'admin', 'finance']
-const TEST_PROMPT = 'Launch a SAR 300 Google Ads test'
+const TEST_PROMPT = 'Use Flaire to request a purchase of SAR 100 from Canva for a test design subscription.'
 
 function readPendingCompany(): string {
   try {

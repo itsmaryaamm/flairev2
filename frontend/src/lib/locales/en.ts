@@ -941,7 +941,7 @@ export const en: Record<string, string> = {
   'setup.testTitle': 'Make a test purchase',
   'setup.testWhy': 'See the whole loop once: your AI asks, Flaire checks, you see it in Activity.',
   'setup.testAsk': 'Ask your AI this:',
-  'setup.testWhatHappens': 'Flaire checks the limits and either approves it, holds it for you, or blocks it. The result shows up here and in Activity.',
+  'setup.testWhatHappens': 'ChatGPT may ask "Allow ChatGPT to use Flaire?". Tap Allow once. Flaire then checks the limits and approves it, holds it for you, or blocks it. The result shows up here and in Activity. If it only chats and never asks, start a new chat and make sure Flaire is switched on under the + menu.',
   'setup.testStatus': 'Status',
   'setup.testReceived': 'First purchase received',
   'setup.testWaiting': 'Waiting for the first purchase',
