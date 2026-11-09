@@ -174,3 +174,17 @@ def test_guard_blocks_off_topic_but_keeps_flaire_questions():
     for q in ["How does Flaire work?", "can my AI overspend?", "is it real money", "how do I set a budget", "approve the AWS request", "hi", "ما هي ميزانية الذكاء الاصطناعي؟", "how much is left for Marketing AI"]:
         assert is_on_topic(q), q
     assert is_on_topic("and the second one?", True) and not is_on_topic("and the second one?", False)
+
+
+def test_static_faq_answers_the_actual_question(monkeypatch):
+    from app.api.routes import settings
+    monkeypatch.setattr(settings, "gemini_api_key", None)
+    from fastapi.testclient import TestClient
+    from app.main import app
+    c = TestClient(app)
+    r = c.post("/api/v1/public/chat", json={"message": "Is it real money?"}).json()
+    assert r["reply"].startswith("No. Flaire is a sandbox") and r["mode"] == "static"
+    r = c.post("/api/v1/public/chat", json={"message": "Can my AI overspend?"}).json()
+    assert "limit" in r["reply"] and "sandbox" not in r["reply"].split(".")[0].lower()
+    r = c.post("/api/v1/public/chat", json={"message": "هل هي أموال حقيقية؟"}).json()
+    assert "بيئة تجريبية" in r["reply"]

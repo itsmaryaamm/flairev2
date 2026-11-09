@@ -862,9 +862,11 @@ def public_chat(body: PublicChatIn, request: Request):
     if not guard.is_on_topic(body.message, bool(body.history)):
         return {"reply": guard.refusal(body.message), "mode": "blocked"}
     if not settings.gemini_enabled:
-        return {"reply": _PUB_FALLBACK, "mode": "static"}
+        return {"reply": guard.faq_answer(body.message) or _PUB_FALLBACK, "mode": "static"}
     hist = [{"role": h["role"], "content": str(h["content"])[:600]} for h in (body.history or []) if h.get("role") in ("user", "assistant") and h.get("content")][-8:]
     try:
         return {"reply": gemini.chat(PUBLIC_SYSTEM + (" Reply in Arabic." if body.lang == "ar" else ""), hist, body.message, max_tokens=400), "mode": "gemini"}
-    except Exception:
-        return {"reply": _PUB_FALLBACK, "mode": "static"}
+    except Exception as exc:
+        import logging
+        logging.getLogger("flaire.gemini").warning("public chat fell back: %s", str(exc)[:200])
+        return {"reply": guard.faq_answer(body.message) or _PUB_FALLBACK, "mode": "static"}
