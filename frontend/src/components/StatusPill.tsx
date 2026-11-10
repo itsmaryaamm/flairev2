@@ -25,6 +25,7 @@ export function toneFor(status: string | null | undefined): PillTone {
     case 'ok':
       return 'green'
     case 'pending_approval':
+    case 'awaiting_paypal':
     case 'pending':
     case 'paused':
       return 'amber'
@@ -49,6 +50,7 @@ const LABELS: Record<string, string> = {
   authorized: 'Authorized',
   approved: 'Approved',
   pending_approval: 'Waiting for you',
+  awaiting_paypal: 'Approve in PayPal',
   pending: 'Waiting for you',
   denied: 'Blocked',
   rejected: 'Blocked',

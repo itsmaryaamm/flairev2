@@ -46,7 +46,7 @@ def company_out(c: Company) -> CompanyOut:
     if c.kill_switch_frozen_cards is None:
         c.kill_switch_frozen_cards = []
     out = CompanyOut.model_validate(c)
-    out.lithic_configured = bool(c.lithic_api_key_enc) or bool(settings.lithic_api_key)
+    out.lithic_configured = bool(c.lithic_api_key_enc) or bool(settings.lithic_api_key) or settings.paypal_enabled
     return out
 
 
@@ -472,6 +472,8 @@ def reject(pr_id: int, body: ApprovalIn, user: User = Depends(require_approver),
 
 @router.get("/transactions", response_model=list[TransactionOut], tags=["transactions"])
 def list_transactions(card_id: int | None = None, limit: int = Query(50, le=500), user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    from app.paypal_sync import sync_pending
+    sync_pending(db, user.company_id)
     q = db.query(Transaction).filter(Transaction.company_id == user.company_id)
     if card_id:
         q = q.filter(Transaction.card_id == card_id)
@@ -483,7 +485,41 @@ def get_transaction(tx_id: int, user: User = Depends(get_current_user), db: Sess
     t = db.get(Transaction, tx_id)
     if not t or t.company_id != user.company_id:
         raise HTTPException(404, "Transaction not found")
+    from app.paypal_sync import sync_transaction
+    sync_transaction(db, t)
+    db.refresh(t)
     return transaction_out(t)
+
+
+@router.get("/paypal/status", tags=["paypal"])
+def paypal_status(user: User = Depends(get_current_user)):
+    return {"configured": settings.paypal_enabled, "sandbox": "sandbox" in settings.paypal_base_url, "receiver_set": bool(settings.paypal_receiver_email),
+            "webhook_url_path": "/api/v1/webhooks/paypal"}
+
+
+class PayPalCaptureIn(BaseModel):
+    order_id: str = Field(min_length=5, max_length=64)
+
+
+@router.post("/paypal/checkout/capture", response_model=PurchaseRequestOut, tags=["paypal"])
+def paypal_capture(body: PayPalCaptureIn, user: User = Depends(require_approver), db: Session = Depends(get_db)):
+    """The approver is back from PayPal. Capture the order and finish the purchase."""
+    from app.services import complete_paypal_checkout
+    company = company_of(user, db)
+    rows = db.query(PurchaseRequest).filter(PurchaseRequest.company_id == user.company_id, PurchaseRequest.status == "awaiting_paypal").all()
+    pr = next((r for r in rows if ((r.decision or {}).get("paypal_order") or {}).get("id") == body.order_id), None)
+    if pr is None:
+        raise HTTPException(404, "No purchase is waiting for this PayPal order.")
+    complete_paypal_checkout(db, company, pr, body.order_id, user)
+    db.refresh(pr)
+    return purchase_out(pr)
+
+
+@router.post("/paypal/test", tags=["paypal"])
+def paypal_test(user: User = Depends(require_approver)):
+    """One click proof that the sandbox keys work. Moves no money."""
+    from app.integrations.payments.paypal import PayPalAdapter
+    return PayPalAdapter().check_connection()
 
 
 @router.post("/transactions/{tx_id}/settle", response_model=TransactionOut, tags=["transactions"])
@@ -515,8 +551,8 @@ def list_cards(user: User = Depends(get_current_user), db: Session = Depends(get
 
 @router.post("/cards", response_model=CardOut, status_code=201, tags=["cards"])
 def create_card(body: CardIn, user: User = Depends(require_approver), db: Session = Depends(get_db)):
-    if body.provider not in MOCK_PROVIDERS and body.provider != "lithic":
-        raise HTTPException(422, f"provider must be one of {', '.join(MOCK_PROVIDERS)}, lithic")
+    if body.provider not in MOCK_PROVIDERS and body.provider not in ("lithic", "paypal"):
+        raise HTTPException(422, f"provider must be one of {', '.join(MOCK_PROVIDERS)}, lithic, paypal")
     if body.provider in MOCK_PROVIDERS and settings.env == "prod":
         raise HTTPException(422, "Simulated bank cards are not available. Cards are issued per AI employee through Lithic.")
     if body.department_id:

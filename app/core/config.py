@@ -51,6 +51,18 @@ class Settings(BaseSettings):
     # Flaire amounts are SAR; Lithic sandbox cards are USD. Halalas are converted to cents at this rate before the issuer is called.
     fx_sar_usd: float = 3.75
 
+    # PayPal sandbox (hackathon rail). Create a Sandbox app at https://developer.paypal.com/dashboard/applications/sandbox
+    # and add Payouts under the app's features. The receiver is a sandbox Personal account that stands in for the merchant.
+    paypal_client_id: str | None = None
+    paypal_client_secret: str | None = None
+    paypal_receiver_email: str | None = None
+    paypal_webhook_id: str | None = None
+    # When true, a purchase that a person approved is paid through PayPal Orders: the approver confirms it with their own PayPal login.
+    paypal_checkout_approval: bool = False
+    # Where PayPal sends the approver back after approving (the Flaire web app).
+    frontend_url: str = "https://flaire-nine.vercel.app"
+    paypal_base_url: str = "https://api-m.sandbox.paypal.com"
+
     # Platform owner console (GET /platform/*): comma separated emails that may read cross-company metrics.
     platform_admin_emails: str = ""
     # Mandatory 2FA for every member of a company. Applies to companies created from now on; existing ones keep their flag.
@@ -82,6 +94,10 @@ class Settings(BaseSettings):
     @property
     def claude_enabled(self) -> bool:
         return bool(self.anthropic_api_key)
+
+    @property
+    def paypal_enabled(self) -> bool:
+        return bool(self.paypal_client_id and self.paypal_client_secret)
 
     @property
     def lithic_enabled(self) -> bool:

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { ConnectClaudeCard } from '../components/settings/ConnectClaudeCard'
+import { PayPalCard } from '../components/settings/PayPalCard'
 import { PaymentsCard } from '../components/settings/PaymentsCard'
 import { GetTheApp } from '../components/home/GetTheApp'
 
@@ -11,6 +12,7 @@ export default function ConnectionsPage() {
         An <b>AI employee</b> is the financial identity: card, limits and history. An <b>AI app</b> is where it runs, like Claude or ChatGPT. You pick the employee when you connect. To see or revoke an app for one employee, open it under <Link to="/employees" className="text-brand font-semibold">AI workforce</Link>.
       </p>
       <ConnectClaudeCard />
+      <PayPalCard />
       <PaymentsCard />
       <GetTheApp />
     </div>

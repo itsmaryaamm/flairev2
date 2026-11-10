@@ -88,3 +88,33 @@ async def lithic_webhook(request: Request, db: Session = Depends(get_db)):
                          details={"transaction_id": tx.id, "from": old, "to": new_status, "event_id": msg_id, "event_type": event_type})
     db.commit()
     return {"ok": True, "matched_transaction": tx.id if tx else None}
+
+
+@router.post("/webhooks/paypal", tags=["webhooks"])
+async def paypal_webhook(request: Request, db: Session = Depends(get_db)):
+    """PayPal Payouts events (PAYMENT.PAYOUTSBATCH.*, PAYMENT.PAYOUTS-ITEM.*).
+
+    If PAYPAL_WEBHOOK_ID is set the signature is verified with PayPal. Either way the payout's real state is fetched from PayPal's
+    API before anything changes, so a forged body cannot move money or mark anything settled.
+    """
+    import json
+    from app.integrations.payments.paypal import PayPalAdapter
+    from app.paypal_sync import sync_transaction
+    raw = await request.body()
+    try:
+        event = json.loads(raw or b"{}")
+    except ValueError:
+        raise HTTPException(400, "Invalid JSON")
+    settings = get_settings()
+    if settings.paypal_webhook_id and not PayPalAdapter().verify_webhook({k.lower(): v for k, v in request.headers.items()}, event):
+        raise HTTPException(401, "Invalid PayPal signature")
+    event_id = str(event.get("id") or "")
+    if event_id and db.query(WebhookEvent).filter(WebhookEvent.provider == "paypal", WebhookEvent.event_id == event_id).first():
+        return {"ok": True, "duplicate": True}
+    res = event.get("resource") or {}
+    batch = (res.get("batch_header") or {}).get("payout_batch_id") or res.get("payout_batch_id")
+    db.add(WebhookEvent(provider="paypal", event_id=event_id or f"noid-{batch}", event_type=str(event.get("event_type", "unknown")), payload=event))
+    tx = db.query(Transaction).filter(Transaction.provider == "paypal", Transaction.provider_ref == f"paypal_{batch}").first() if batch else None
+    status = sync_transaction(db, tx, actor="paypal-webhook") if tx else None
+    db.commit()
+    return {"ok": True, "matched_transaction": tx.id if tx else None, "status": status}

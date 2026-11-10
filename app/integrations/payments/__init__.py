@@ -7,9 +7,12 @@
 from app.integrations.payments.base import PaymentAdapter, PaymentResult
 from app.integrations.payments.lithic import LithicAdapter
 from app.integrations.payments.mock_bank import MOCK_PROVIDERS, MockBankAdapter
+from app.integrations.payments.paypal import PayPalAdapter
 
 
 def get_adapter(provider: str, company=None) -> PaymentAdapter:
+    if provider == "paypal":
+        return PayPalAdapter()
     if provider == "lithic":
         key = None
         if company is not None and getattr(company, "lithic_api_key_enc", None):
@@ -21,4 +24,4 @@ def get_adapter(provider: str, company=None) -> PaymentAdapter:
     raise ValueError(f"Unknown payment provider '{provider}'")
 
 
-__all__ = ["PaymentAdapter", "PaymentResult", "MockBankAdapter", "LithicAdapter", "get_adapter", "MOCK_PROVIDERS"]
+__all__ = ["PaymentAdapter", "PaymentResult", "MockBankAdapter", "LithicAdapter", "PayPalAdapter", "get_adapter", "MOCK_PROVIDERS"]

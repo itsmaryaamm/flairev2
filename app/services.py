@@ -177,8 +177,16 @@ def execute_payment(db: Session, company: Company, pr: PurchaseRequest, decision
     pr.decided_at = utcnow()
     db.flush()
     db.commit()
+    # PayPal checkout approval: a purchase a person approved is paid through PayPal Orders, so the approver confirms it with their own PayPal login.
+    if card.provider == "paypal" and get_settings().paypal_checkout_approval and pr.approved_by_id is not None:
+        return start_paypal_checkout(db, company, pr)
     adapter = get_adapter(card.provider, company)
     result = adapter.authorize(card, pr.amount, pr.merchant, f"FLAIRE*{pr.merchant}")
+    return record_payment(db, company, pr, card, agent, dept, result)
+
+
+def record_payment(db: Session, company: Company, pr: PurchaseRequest, card: Card, agent: Agent, dept: Department, result) -> Transaction:
+    """Write the ledger entry for a payment result and update budgets and the audit trail."""
     fee = round(pr.amount * (company.fee_rate_bps or 0) / 10_000) if result.ok else 0
     from app.finance import stamp_transaction
     accountable, why = accountable_for(db, company, agent, pr)
@@ -331,3 +339,52 @@ def set_kill_switch(db: Session, company: Company, user: User, enabled: bool, re
     db.commit()
     db.refresh(company)
     return company
+
+
+# ---------------- PayPal checkout approval (Orders v2) ----------------
+def start_paypal_checkout(db: Session, company: Company, pr: PurchaseRequest) -> None:
+    """Create a PayPal order for an approved purchase. Nothing is paid until the approver approves it in PayPal and Flaire captures it."""
+    from app.integrations.payments.paypal import PayPalAdapter
+    try:
+        order = PayPalAdapter().create_order(pr.amount, pr.merchant, pr.id, f"FLAIRE*{pr.merchant}")
+    except Exception as exc:
+        pr.status = "failed"
+        pr.decision = {**pr.decision, "payment_error": f"PayPal order could not be created: {str(exc)[:200]}"}
+        audit.record(db, company.id, actor_type="system", actor_id=None, actor_name="payment-service", event="payment.failed", details={"request_id": pr.id, "reason": str(exc)[:200]})
+        return None
+    pr.status = "awaiting_paypal"
+    pr.decision = {**pr.decision, "paypal_order": order}
+    audit.record(db, company.id, actor_type="system", actor_id=None, actor_name="payment-service", event="payment.awaiting_paypal",
+                 details={"request_id": pr.id, "order_id": order["id"], "usd": order["usd"]})
+    return None
+
+
+def complete_paypal_checkout(db: Session, company: Company, pr: PurchaseRequest, order_id: str, user: User) -> Transaction:
+    """The approver returned from PayPal. Capture the order (PayPal confirms the buyer approved it) and record the payment once."""
+    from app.integrations.payments.base import PaymentResult
+    from app.integrations.payments.paypal import PayPalAdapter
+    order = (pr.decision or {}).get("paypal_order") or {}
+    if pr.status != "awaiting_paypal" or order.get("id") != order_id:
+        raise HTTPException(409, "This request is not waiting for a PayPal approval.")
+    dept = db.query(Department).filter(Department.id == pr.department_id).with_for_update().one()
+    agent = db.get(Agent, pr.agent_id)
+    card = pick_card(db, company, pr)
+    if card is None:
+        raise HTTPException(409, "This AI employee has no active card.")
+    if pr.amount > dept.remaining or pr.amount > card.available_balance:
+        raise HTTPException(409, "Budget or card balance changed and no longer covers this purchase.")
+    adapter = PayPalAdapter()
+    try:
+        cap = adapter.capture_order(order_id)
+    except Exception as exc:
+        raise HTTPException(502, f"PayPal could not capture the order: {str(exc)[:200]}")
+    if cap["status"] != "COMPLETED":
+        raise HTTPException(409, f"PayPal says the order is {cap['status']}. Approve it in PayPal first.")
+    card.available_balance -= pr.amount
+    result = PaymentResult(True, "settled", f"paypal_capture_{cap['capture_id']}", raw={"order_id": order_id, "capture_id": cap["capture_id"], "sandbox": True},
+                           issuer_amount=cap["usd_cents"], issuer_currency="USD", fx_rate=adapter.fx_rate)
+    tx = record_payment(db, company, pr, card, agent, dept, result)
+    audit.record(db, company.id, actor_type="user", actor_id=user.id, actor_name=user.full_name, event="payment.paypal_approved",
+                 details={"request_id": pr.id, "order_id": order_id, "capture_id": cap["capture_id"]})
+    db.commit()
+    return tx

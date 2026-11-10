@@ -58,6 +58,12 @@ export function DecisionSheet({
         note: note.trim() || undefined,
         password: password || undefined,
       })
+      // A PayPal checkout purchase: send the approver straight to PayPal to confirm it.
+      const order = (data.decision as unknown as { paypal_order?: { approve_url?: string } } | null)?.paypal_order
+      if (data.status === 'awaiting_paypal' && order?.approve_url) {
+        window.location.href = order.approve_url
+        return
+      }
       onDone(data, action)
       onClose()
     } catch (err) {

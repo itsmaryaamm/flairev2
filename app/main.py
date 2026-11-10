@@ -81,7 +81,7 @@ app.include_router(well_known)
 
 @app.get("/api/v1/health", tags=["health"])
 def health():
-    return {"status": "ok", "engine": settings.auth_engine, "payments": ["mock_snb", "mock_rajhi", "mock_riyad"] + (["lithic"] if settings.lithic_enabled else []),
+    return {"status": "ok", "engine": settings.auth_engine, "payments": ["mock_snb", "mock_rajhi", "mock_riyad"] + (["lithic"] if settings.lithic_enabled else []) + (["paypal"] if settings.paypal_enabled else []),
             "claude": settings.claude_enabled, "env": settings.env, "auth": "supabase" if (settings.supabase_url and settings.supabase_anon_key) else "builtin"}
 
 

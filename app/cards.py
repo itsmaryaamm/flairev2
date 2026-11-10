@@ -20,6 +20,8 @@ from app.models import Agent, Card, Company
 def issuer_for(company: Company) -> str:
     """lithic when a key is available, otherwise the simulated issuer (never offered in production UI)."""
     s = get_settings()
+    if s.paypal_enabled:
+        return "paypal"
     if company.lithic_api_key_enc or s.lithic_api_key:
         return "lithic"
     return "mock_snb"

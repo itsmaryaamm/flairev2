@@ -14,6 +14,7 @@ import { Spinner } from '../Spinner'
 
 const PROVIDER_NAMES: Record<string, string> = {
   lithic: 'Lithic',
+  paypal: 'PayPal Sandbox',
   mock_snb: 'SNB',
   mock_rajhi: 'Al Rajhi',
   mock_riyad: 'Riyad Bank',

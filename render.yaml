@@ -35,6 +35,18 @@ services:
         sync: false
       - key: GEMINI_API_KEY
         sync: false
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_CLIENT_SECRET
+        sync: false
+      - key: PAYPAL_RECEIVER_EMAIL
+        sync: false
+      - key: PAYPAL_WEBHOOK_ID
+        sync: false
+      - key: PAYPAL_CHECKOUT_APPROVAL
+        value: "true"
+      - key: FRONTEND_URL
+        sync: false
       - key: LITHIC_API_KEY
         sync: false
       - key: SHOTOKU_SERVICE_URL

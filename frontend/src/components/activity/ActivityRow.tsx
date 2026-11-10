@@ -97,6 +97,18 @@ function TransactionBlock({ tx, request, onSettled }: { tx: Transaction; request
           </dd>
         </div>
       </dl>
+      {tx.provider === 'paypal' && (
+        <div className="mt-3 rounded-xl border border-line bg-brand-light p-3 text-xs">
+          <div className="font-semibold text-sm">Paid through PayPal (sandbox)</div>
+          <div className="mt-1 text-neutral-600">
+            Flaire approved this purchase, then sent {tx.issuer_amount != null ? `USD ${(tx.issuer_amount / 100).toFixed(2)}` : 'the payout'} to the merchant with the PayPal Payouts API
+            at {tx.fx_rate} SAR per USD. Status: <b>{tx.status === 'authorized' ? 'PayPal is processing it' : tx.status === 'reversed' ? 'PayPal returned it, the budget was given back' : tx.status}</b>.
+          </div>
+          <a className="inline-block mt-1.5 text-brand font-semibold" href="https://www.sandbox.paypal.com/myaccount/transactions" target="_blank" rel="noreferrer">
+            Open the PayPal sandbox activity
+          </a>
+        </div>
+      )}
       {accountable && (
         <div className="mt-2.5 pt-2.5 border-t border-line flex items-start gap-2 text-xs text-neutral-600">
           <UserCheck className="h-3.5 w-3.5 text-brand shrink-0 mt-px" />

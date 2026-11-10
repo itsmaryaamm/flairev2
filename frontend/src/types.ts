@@ -185,6 +185,7 @@ export interface AgentCreateResponse {
 export type PurchaseStatus =
   | 'approved'
   | 'pending_approval'
+  | 'awaiting_paypal'
   | 'denied'
   | 'completed'
   | 'failed'

@@ -7,6 +7,7 @@ import { sar } from '../lib/money'
 import type { PurchaseRequest } from '../types'
 import { NeedsYou } from '../components/home/NeedsYou'
 import { ErrorNote } from '../components/ErrorNote'
+import { PayPalApprove } from '../components/PayPalApprove'
 import { ActivityRow } from '../components/activity/ActivityRow'
 
 /** Approvals: what is waiting for a person (calm when empty), then the decisions already made. */
@@ -18,7 +19,7 @@ export default function ApprovalsPage() {
   const reqs = useFetch(() => api.get<PurchaseRequest[]>('/purchase-requests', { params: { limit: 100 } }).then((r) => r.data), [])
   const waiting = approvals.data ?? []
   const decided = useMemo(
-    () => (reqs.data ?? []).filter((r) => r.status !== 'pending_approval' && (r.approved_by || r.status === 'denied' || r.status === 'rejected')).slice(0, 25),
+    () => (reqs.data ?? []).filter((r) => r.status !== 'pending_approval' && r.status !== 'awaiting_paypal' && (r.approved_by || r.status === 'denied' || r.status === 'rejected')).slice(0, 25),
     [reqs.data],
   )
   const refresh = useCallback(() => {
@@ -49,6 +50,7 @@ export default function ApprovalsPage() {
           </div>
         }
       />
+      <PayPalApprove items={reqs.data ?? []} />
       <section className="rounded-[20px] bg-white border border-[#EFEBE4] overflow-hidden">
         <div className="flex items-center justify-between px-[22px] pt-5 pb-2">
           <h2 className="font-display text-[18px] font-semibold">Recent decisions</h2>

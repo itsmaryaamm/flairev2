@@ -103,7 +103,7 @@ def status(user: User = Depends(get_current_user), db: Session = Depends(get_db)
     steps = {
         "company": True,
         "department": db.query(Department).filter(Department.company_id == cid).count() > 0,
-        "card": bool(company.lithic_api_key_enc or get_settings().lithic_api_key),       # Lithic key saved
+        "card": bool(company.lithic_api_key_enc or get_settings().lithic_api_key or get_settings().paypal_enabled),       # Lithic key saved
         "agent": has_agent,
         "employee": has_agent,
         "claude_connected": oauth_connected,

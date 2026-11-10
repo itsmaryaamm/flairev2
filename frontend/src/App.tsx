@@ -15,6 +15,7 @@ import ActivityPage from './pages/ActivityPage'
 import ControlsPage from './pages/ControlsPage'
 import OverviewPage from './pages/OverviewPage'
 import ApprovalsPage from './pages/ApprovalsPage'
+import PayPalReturnPage from './pages/PayPalReturnPage'
 import ConnectionsPage from './pages/ConnectionsPage'
 import WelcomePage from './pages/WelcomePage'
 import SetupPage from './pages/SetupPage'
@@ -104,6 +105,7 @@ export default function App() {
             <Route path="/employees/:id" element={<EmployeeDetailPage />} />
             <Route path="/spending" element={<ActivityPage />} />
             <Route path="/approvals" element={<ApprovalsPage />} />
+            <Route path="/paypal/return" element={<PayPalReturnPage />} />
             <Route path="/connections" element={<ConnectionsPage />} />
             <Route path="/controls" element={<ControlsPage />} />
             <Route element={<RequireAdminView />}>
