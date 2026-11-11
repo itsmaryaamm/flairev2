@@ -516,10 +516,23 @@ def paypal_capture(body: PayPalCaptureIn, user: User = Depends(require_approver)
 
 
 @router.post("/paypal/test", tags=["paypal"])
-def paypal_test(user: User = Depends(require_approver)):
-    """One click proof that the sandbox keys work. Moves no money."""
+def paypal_test(user: User = Depends(require_approver), db: Session = Depends(get_db)):
+    """One click proof that the sandbox keys work. Moves no money. When the keys work it also moves any simulated
+    employee card onto PayPal and says what the company is now set up to do."""
     from app.integrations.payments.paypal import PayPalAdapter
-    return PayPalAdapter().check_connection()
+    from app.services import _upgrade_to_paypal
+    out = PayPalAdapter().check_connection()
+    if out.get("ok"):
+        company = company_of(user, db)
+        cards = db.query(Card).filter(Card.company_id == company.id).all()
+        for c in cards:
+            _upgrade_to_paypal(company, c)
+        db.commit()
+        n = sum(1 for c in cards if c.provider == "paypal")
+        other = len(cards) - n
+        approval = "on" if settings.paypal_checkout_approval else "OFF"
+        out["message"] = f"{out.get('message', '')} PayPal cards: {n}, other cards: {other}. Approval through PayPal login: {approval}."
+    return out
 
 
 @router.post("/transactions/{tx_id}/settle", response_model=TransactionOut, tags=["transactions"])
