@@ -204,8 +204,8 @@ export function Layout() {
               <h1 className="font-display text-[26px] leading-tight font-semibold tracking-tightest truncate">{head.title}</h1>
               <p className="text-[14px] text-neutral-500 truncate">{head.sub}</p>
             </div>
-            <span title="Everything here is simulated. No real money moves, and no real card is charged." className="rounded-full bg-[#FBF0D9] text-[#5E4300] text-[13px] font-semibold px-3.5 h-9 inline-flex items-center gap-2 whitespace-nowrap">
-              <span className="h-2 w-2 rounded-full bg-[#C98A00]" /> Sandbox · simulated
+            <span title={company?.paypal_enabled ? 'Payments go through the PayPal sandbox. No real money moves.' : 'Everything here is simulated. No real money moves, and no real card is charged.'} className="rounded-full bg-[#FBF0D9] text-[#5E4300] text-[13px] font-semibold px-3.5 h-9 inline-flex items-center gap-2 whitespace-nowrap">
+              <span className="h-2 w-2 rounded-full bg-[#C98A00]" /> {company?.paypal_enabled ? 'PayPal sandbox' : 'Sandbox · simulated'}
             </span>
             <button type="button" onClick={() => setPalette(true)} className="hidden lg:inline-flex items-center gap-2 h-10 w-[230px] rounded-xl border border-line-strong bg-white px-3 text-[14px] text-neutral-500 hover:border-brand">
               <Search className="h-4 w-4" /> <span className="flex-1 text-start">Ask Flaire</span>

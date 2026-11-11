@@ -53,6 +53,7 @@ class CompanyOut(BaseModel):
     new_merchant_review_from: int = 20_000
     notify_threshold: int = 0
     lithic_configured: bool = False
+    paypal_enabled: bool = False
     require_2fa_for_approvers: bool = False
     require_2fa_for_all: bool = False
     require_change_approval: bool = False

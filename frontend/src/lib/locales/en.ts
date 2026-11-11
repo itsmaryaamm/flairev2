@@ -64,8 +64,8 @@ export const en: Record<string, string> = {
 
   // ---- statuses
   'status.unknown': 'Unknown',
-  'status.completed': 'Sandbox authorized',
-  'status.settled': 'Sandbox authorized',
+  'status.completed': 'Paid (sandbox)',
+  'status.settled': 'Paid (sandbox)',
   'status.authorized': 'Approved',
   'status.approved': 'Approved',
   'status.pending_approval': 'Waiting for you',

@@ -36,6 +36,7 @@ export interface Company {
   notify_threshold: number
   /** True when a Lithic sandbox API key is stored for this company. The key itself is never returned. */
   lithic_configured: boolean
+  paypal_enabled?: boolean
   /** When true, owners and finance users without 2FA cannot approve or reject until they enable it. */
   require_2fa_for_approvers: boolean
   /** When true, a loosening policy change waits for a second admin (see /policy). */

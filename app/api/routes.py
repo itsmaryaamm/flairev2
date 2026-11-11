@@ -47,6 +47,7 @@ def company_out(c: Company) -> CompanyOut:
         c.kill_switch_frozen_cards = []
     out = CompanyOut.model_validate(c)
     out.lithic_configured = bool(c.lithic_api_key_enc) or bool(settings.lithic_api_key) or settings.paypal_enabled
+    out.paypal_enabled = settings.paypal_enabled
     return out
 
 
