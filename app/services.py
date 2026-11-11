@@ -131,9 +131,25 @@ def pick_card(db: Session, company: Company, pr: PurchaseRequest) -> Card | None
     if card is None and agent is not None:
         from app.cards import issue_card_for_agent
         card = issue_card_for_agent(db, company, agent)
+    if card is not None:
+        card = _upgrade_to_paypal(company, card)
     if card and card.status == "active":
         return card
     return None
+
+
+def _upgrade_to_paypal(company: Company, card: Card) -> Card:
+    """Employees created before PayPal was switched on still hold a simulated card. Move it onto PayPal in place so
+    existing AI employees pay through PayPal too. Cards at a real issuer (Lithic) are never touched."""
+    if card.provider.startswith("mock_") and get_settings().paypal_enabled:
+        try:
+            info = get_adapter("paypal", company).create_card(card.label or "AI employee", card.credit_limit or 0, "SAR")
+        except Exception:
+            return card
+        card.provider = "paypal"
+        card.provider_token = info["provider_token"]
+        card.last4 = info["last4"]
+    return card
 
 
 def execute_payment(db: Session, company: Company, pr: PurchaseRequest, decision: Decision) -> Transaction | None:

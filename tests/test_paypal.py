@@ -228,3 +228,12 @@ def test_checkout_approval_flow(monkeypatch):
     tx = c.get(f"/api/v1/transactions/{cap.json()['transaction_id']}", headers=H).json()
     assert tx["status"] == "settled" and tx["provider_ref"] == "paypal_capture_CAP1" and tx["issuer_amount"] == 24_000
     assert c.post("/api/v1/paypal/checkout/capture", json={"order_id": "ORDER12345"}, headers=H).status_code == 404  # cannot capture twice
+
+
+def test_old_simulated_card_moves_to_paypal(configured):
+    from app.services import _upgrade_to_paypal
+    old = Card(label="Marketing AI", provider="mock_snb", last4="0000", currency="SAR", status="active", credit_limit=50_000, available_balance=50_000)
+    moved = _upgrade_to_paypal(None, old)
+    assert moved.provider == "paypal" and moved.available_balance == 50_000
+    real = Card(label="x", provider="lithic", last4="1", currency="SAR", status="active", credit_limit=1, available_balance=1)
+    assert _upgrade_to_paypal(None, real).provider == "lithic"
