@@ -223,7 +223,7 @@ export interface PurchaseRequest {
   decided_at: string | null
 }
 
-export type CardProvider = 'mock_snb' | 'mock_rajhi' | 'mock_riyad' | 'lithic'
+export type CardProvider = 'mock_snb' | 'mock_rajhi' | 'mock_riyad' | 'lithic' | 'paypal'
 
 export type TransactionStatus = 'authorized' | 'settled' | 'declined' | 'reversed'
 
