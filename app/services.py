@@ -138,10 +138,10 @@ def pick_card(db: Session, company: Company, pr: PurchaseRequest) -> Card | None
     return None
 
 
-def _upgrade_to_paypal(company: Company, card: Card) -> Card:
+def _upgrade_to_paypal(company: Company, card: Card, force: bool = False) -> Card:
     """Employees created before PayPal was switched on still hold a simulated card. Move it onto PayPal in place so
-    existing AI employees pay through PayPal too. Cards at a real issuer (Lithic) are never touched."""
-    if card.provider not in ("paypal", "lithic") and get_settings().paypal_enabled:
+    existing AI employees pay through PayPal too. Cards at a real issuer (Lithic) are only moved when a person asks (force), from the PayPal test button."""
+    if card.provider != "paypal" and (force or card.provider != "lithic") and get_settings().paypal_enabled:
         try:
             info = get_adapter("paypal", company).create_card(card.label or "AI employee", card.credit_limit or 0, "SAR")
         except Exception:

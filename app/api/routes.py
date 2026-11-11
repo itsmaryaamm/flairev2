@@ -526,7 +526,7 @@ def paypal_test(user: User = Depends(require_approver), db: Session = Depends(ge
         company = company_of(user, db)
         cards = db.query(Card).filter(Card.company_id == company.id).all()
         for c in cards:
-            _upgrade_to_paypal(company, c)
+            _upgrade_to_paypal(company, c, force=True)
         db.commit()
         n = sum(1 for c in cards if c.provider == "paypal")
         other = len(cards) - n

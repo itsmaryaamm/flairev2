@@ -237,3 +237,4 @@ def test_old_simulated_card_moves_to_paypal(configured):
     assert moved.provider == "paypal" and moved.available_balance == 50_000
     real = Card(label="x", provider="lithic", last4="1", currency="SAR", status="active", credit_limit=1, available_balance=1)
     assert _upgrade_to_paypal(None, real).provider == "lithic"
+    assert _upgrade_to_paypal(None, real, force=True).provider == "paypal"
