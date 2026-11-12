@@ -25,13 +25,13 @@ Prize categories to name on the Devpost text: Best Use of Agentic Commerce, Best
 ## Script (voice over, about 330 words)
 
 **0:00 to 0:14 Hook.** Screen: ChatGPT with the Notion prompt already pasted, press send as you start talking.
-"AI can now buy things for your business. Today that means handing it a company card and hoping for the best. This is Flaire, the finance department for AI employees, and it pays through PayPal."
+"Companies are letting AI agents buy things. Today that means sharing a company card and hoping. No budget per agent, no approval, no off switch. This is Flaire, the finance department for AI employees, and every payment goes through PayPal."
 
 **0:14 to 0:50 Flow 1, under the limit.** Screen: ChatGPT answers, switch to Flaire Spending, open the Notion row, show the green PayPal panel, then switch to the PayPal merchant Activity and refresh.
 "My Marketing AI lives inside ChatGPT. I ask it for a Notion workspace, 375 riyals. Flaire checks the employee's budget, per purchase limit and the merchant. Everything is inside the rules, so Flaire pays through the PayPal Payouts API. 375 riyals becomes exactly 100 dollars. And here it is in PayPal, received and completed."
 
 **0:50 to 1:40 Flow 2, a human approves.** Screen: ChatGPT with the Figma prompt, Flaire Approvals, click Approve, type password, PayPal popup, Pay, return page, merchant Activity.
-"Now a bigger purchase, 800 riyals for Figma. It is above this employee's approval threshold, so Flaire stops and asks a person. The AI cannot approve its own spending. I approve in Flaire with my password. Then Flaire sends me to PayPal, where I approve again with my own PayPal login. Two approvals. PayPal Orders moves the money. Approved by me in Flaire and in PayPal, and the merchant is paid."
+"Now a bigger purchase, 800 riyals for Figma. On a shared card this would just go through. Here, it is above this employee's approval threshold, so Flaire stops and asks a person. The AI cannot approve its own spending. I approve in Flaire with my password. Then Flaire sends me to PayPal, where I approve again with my own PayPal login. Two approvals. PayPal Orders moves the money. Approved by me in Flaire and in PayPal, and the merchant is paid."
 
 **1:40 to 2:05 Flow 3, blocked.** Screen: ChatGPT with the Canva 1,200 prompt, the denial, the Spending list showing a blocked row, then the kill switch toggled on and off.
 "Now a request that breaks the rules. 1,200 riyals is over the limit, so it is denied before PayPal is ever called. Blocked categories like gift cards never get through. And one kill switch freezes every AI employee at once."
@@ -40,7 +40,7 @@ Prize categories to name on the Devpost text: Best Use of Agentic Commerce, Best
 "Under the hood: PayPal OAuth, Payouts with idempotency keys, Orders for approval, and webhooks that Flaire never trusts without asking PayPal again. If PayPal returns a payout, the budget is given back automatically. Any ChatGPT or Claude agent connects through MCP, and Gemini powers the assistant inside the app."
 
 **2:25 to 2:42 Impact and honesty.** Screen: Flaire Overview page.
-"Every company that lets agents spend has this problem, and Flaire earns 0.15 percent of what it governs. Today everything runs in the PayPal sandbox. Next is live PayPal accounts. Flaire: let AI spend, with a human in charge."
+"We built this in Saudi Arabia, so riyals convert to dollars automatically, but every company that lets agents spend has this problem. Flaire earns 0.15 percent of what it governs. Today everything runs in the PayPal sandbox. Next is live PayPal accounts. Flaire: let AI spend, with a human in charge."
 
 End card (2 seconds, text only): flaire-nine.vercel.app
 
