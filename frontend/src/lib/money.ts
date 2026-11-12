@@ -1,4 +1,10 @@
 import type { Locale } from './prefs'
+import { PAYPAL_ONLY } from './flags'
+
+/** Flaire stores money in SAR halalas. The PayPal-only build shows US dollars at PayPal's fixed sandbox rate. */
+const SAR_PER_USD = 3.75
+const usdOf = (halalas: number | null | undefined) => (halalas ?? 0) / 100 / SAR_PER_USD
+const usd = (v: number, o: Intl.NumberFormatOptions = {}) => new Intl.NumberFormat('en-US', o).format(v)
 
 /** The locale money is rendered in. Set by the i18n provider; defaults to English before it mounts. */
 let currentLocale: Locale = 'en'
@@ -25,6 +31,11 @@ function arabicNumber(value: number, opts: Intl.NumberFormatOptions): string {
 
 /** Formats integer halalas as "SAR 1,234.50" (en) or "1,234.50 ر.س" (ar). */
 export function sar(halalas: number | null | undefined, opts?: { compact?: boolean }): string {
+  if (PAYPAL_ONLY) {
+    const v = usdOf(halalas)
+    if (!!opts?.compact && Math.abs(v) >= 10_000) return `$${usd(v, { notation: 'compact', maximumFractionDigits: 1 })}`
+    return `${v < 0 ? '-' : ''}$${usd(Math.abs(v), { minimumFractionDigits: Math.abs(v % 1) < 0.005 ? 0 : 2, maximumFractionDigits: 2 })}`
+  }
   const value = (halalas ?? 0) / 100
   const compact = !!opts?.compact && Math.abs(value) >= 10_000
   if (currentLocale === 'ar') {
@@ -53,6 +64,7 @@ export function money(minor: number | null | undefined, currency: string | null 
 
 /** Formats halalas as a plain number string without the currency, e.g. "1,234.50". Western digits in both languages. */
 export function sarNumber(halalas: number | null | undefined): string {
+  if (PAYPAL_ONLY) return usd(usdOf(halalas), { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   return new Intl.NumberFormat('en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
@@ -61,17 +73,18 @@ export function sarNumber(halalas: number | null | undefined): string {
 
 /** Converts a SAR string typed by a user ("1,234.5", "SAR 500", "500 ر.س") into integer halalas. */
 export function toHalalas(sarString: string | number): number {
-  if (typeof sarString === 'number') return Math.round(sarString * 100)
-  const cleaned = sarString.replace(/sar/i, '').replace(AR_SUFFIX, '').replace(/[,\s]/g, '').trim()
+  const rate = PAYPAL_ONLY ? SAR_PER_USD : 1 // in the PayPal-only build people type dollars
+  if (typeof sarString === 'number') return Math.round(sarString * rate * 100)
+  const cleaned = sarString.replace(/sar|usd|\$/gi, '').replace(AR_SUFFIX, '').replace(/[,\s]/g, '').trim()
   if (cleaned === '') return 0
   const n = Number(cleaned)
   if (!Number.isFinite(n)) return NaN
-  return Math.round(n * 100)
+  return Math.round(n * rate * 100)
 }
 
 /** Converts halalas into a plain decimal string for input default values, e.g. 150000 -> "1500". */
 export function fromHalalas(halalas: number | null | undefined): string {
-  const v = (halalas ?? 0) / 100
+  const v = PAYPAL_ONLY ? usdOf(halalas) : (halalas ?? 0) / 100
   return Number.isInteger(v) ? String(v) : v.toFixed(2)
 }
 

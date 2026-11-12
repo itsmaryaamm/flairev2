@@ -64,7 +64,7 @@ function TransactionBlock({ tx, request, onSettled }: { tx: Transaction; request
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
         <span className="mono-label">{t('activity.transaction')}</span>
         <StatusPill status={tx.status} />
-        {tx.status === 'authorized' && (
+        {tx.status === 'authorized' && tx.provider !== 'paypal' && (
           <button className="btn-secondary text-xs h-7 px-2.5" onClick={settle} disabled={busy}>
             {busy && <Spinner className="h-3 w-3" />} {t('activity.settleNow')}
           </button>

@@ -1,4 +1,4 @@
-# Render blueprint: one Postgres, the FastAPI backend, and the optional Shotoku sidecar.
+# Render blueprint: one Postgres and the FastAPI backend.
 # Deploy: Render dashboard -> New -> Blueprint -> point at this repo.
 databases:
   - name: flaire-db
@@ -30,7 +30,7 @@ services:
       - key: AUTH_ENGINE
         value: native
       - key: CORS_ORIGINS
-        value: https://flaire.vercel.app   # replace with your Vercel domain
+        value: https://flaire-paypal.vercel.app   # replace with your Vercel domain
       - key: ANTHROPIC_API_KEY
         sync: false
       - key: GEMINI_API_KEY
@@ -46,18 +46,5 @@ services:
       - key: PAYPAL_CHECKOUT_APPROVAL
         value: "true"
       - key: FRONTEND_URL
-        sync: false
-      - key: LITHIC_API_KEY
-        sync: false
-      - key: SHOTOKU_SERVICE_URL
-        value: http://flaire-shotoku:8788
+        value: https://flaire-paypal.vercel.app
 
-  - type: web
-    name: flaire-shotoku
-    runtime: node
-    rootDir: app/integrations/shotoku/service
-    buildCommand: npm install
-    startCommand: node server.mjs
-    envVars:
-      - key: RECEIPT_SECRET
-        sync: false   # must equal flaire-api RECEIPT_SECRET

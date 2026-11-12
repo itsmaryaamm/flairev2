@@ -545,6 +545,13 @@ def settle_transaction(tx_id: int, user: User = Depends(require_approver), db: S
     if t.status != "authorized":
         raise HTTPException(409, f"Transaction is {t.status}; only authorized transactions can be settled")
     card = db.get(Card, t.card_id)
+    if card.provider == "paypal":
+        # Never mark a PayPal payout settled on our own say so: ask PayPal and follow what it reports.
+        from app.paypal_sync import sync_transaction
+        sync_transaction(db, t, actor=user.full_name)
+        db.commit()
+        db.refresh(t)
+        return t
     result = get_adapter(card.provider, company_of(user, db)).settle(card, t.provider_ref, t.amount)
     if result.ok:
         t.status = "settled"

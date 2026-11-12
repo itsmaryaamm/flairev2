@@ -68,20 +68,23 @@ def quickstart(body: QuickstartIn, user: User = Depends(get_current_user), db: S
         db.add(dept)
         db.flush()
         made["department"] = dept.name
+    from app.core.config import get_settings
+    pp = get_settings().paypal_enabled
     if not db.query(Card).filter(Card.company_id == company.id).count():
-        info = get_adapter("mock_snb").create_card("SNB Business", body.card_limit, "SAR")
-        db.add(Card(company_id=company.id, label="SNB Business", provider="mock_snb", last4=info["last4"], credit_limit=body.card_limit,
+        provider, label = ("paypal", "PayPal Sandbox") if pp else ("mock_snb", "SNB Business")
+        info = get_adapter(provider, company).create_card(label, body.card_limit, "SAR") if pp else get_adapter(provider).create_card(label, body.card_limit, "SAR")
+        db.add(Card(company_id=company.id, label=label, provider=provider, last4=info["last4"], credit_limit=body.card_limit,
                     available_balance=info["available_balance"], provider_token=info["provider_token"], is_default=True))
-        made["card"] = "SNB Business (simulated)"
+        made["card"] = label
     if body.create_agent and not db.query(Agent).filter(Agent.company_id == company.id).count():
         _, h, prefix = generate_agent_key()
-        agent = Agent(company_id=company.id, department_id=dept.id, name="Marketing AI", role="marketing", api_key_hash=h, key_prefix=prefix,
-                      per_transaction_limit=100_000, monthly_limit=400_000, approval_threshold=100_000, allowed_categories=[], blocked_merchants=[], owner_user_id=user.id)
+        agent = Agent(company_id=company.id, department_id=dept.id, name=("ChatGPT" if pp else "Marketing AI"), role=("general" if pp else "marketing"), api_key_hash=h, key_prefix=prefix,
+                      per_transaction_limit=100_000, monthly_limit=(1_000_000 if pp else 400_000), approval_threshold=(50_000 if pp else 100_000), allowed_categories=[], blocked_merchants=[], owner_user_id=user.id)
         db.add(agent)
         db.flush()
         from app.cards import issue_card_for_agent
         issue_card_for_agent(db, company, agent, actor=user.full_name)
-        made["agent"] = "Marketing AI"
+        made["agent"] = agent.name
     company.onboarding_done = True
     audit.record(db, company.id, actor_type="user", actor_id=user.id, actor_name=user.full_name, event="onboarding.quickstart", details=made)
     db.commit()

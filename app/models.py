@@ -15,7 +15,9 @@ def utcnow() -> datetime:
 
 def _default_require_2fa() -> bool:
     from app.core.config import get_settings
-    return bool(get_settings().require_2fa_for_new_companies)
+    st = get_settings()
+    # The PayPal sandbox edition keeps sign-up short: 2FA stays available in Settings but is not forced on new companies.
+    return bool(st.require_2fa_for_new_companies) and not st.paypal_enabled
 
 
 class Company(Base):

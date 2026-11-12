@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { ConnectClaudeCard } from '../components/settings/ConnectClaudeCard'
+import { PAYPAL_ONLY } from '../lib/flags'
 import { PayPalCard } from '../components/settings/PayPalCard'
 import { PaymentsCard } from '../components/settings/PaymentsCard'
 import { GetTheApp } from '../components/home/GetTheApp'
@@ -13,7 +14,7 @@ export default function ConnectionsPage() {
       </p>
       <ConnectClaudeCard />
       <PayPalCard />
-      <PaymentsCard />
+      {!PAYPAL_ONLY && <PaymentsCard />}
       <GetTheApp />
     </div>
   )

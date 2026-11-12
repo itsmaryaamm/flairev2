@@ -66,10 +66,12 @@ export function normalizeStatus(raw: unknown, user?: User | null): SetupStatus {
  * Whether the person must still go through /setup before they see the app.
  * Company and 2FA are hard requirements; the rest is required until the owner finishes (or dismisses) the wizard.
  */
+import { PAYPAL_ONLY } from './flags'
+
 export function setupRequired(status: SetupStatus | null, user: User | null, hasCompany: boolean): boolean {
   if (!hasCompany) return true
-  if (!status) return !!user && !user.totp_enabled
-  if (status.twofa_required && !status.steps.twofa) return true
+  if (!status) return !PAYPAL_ONLY && !!user && !user.totp_enabled
+  if (!PAYPAL_ONLY && status.twofa_required && !status.steps.twofa) return true
   if (status.complete || status.onboarding_done) return false
   return true
 }

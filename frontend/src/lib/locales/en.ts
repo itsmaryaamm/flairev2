@@ -1,5 +1,5 @@
 /** English strings. Keys are namespaced by screen; {name} placeholders are filled by t(). */
-export const en: Record<string, string> = {
+const enBase: Record<string, string> = {
   'install.blockedTitle': 'Notifications are off for Flaire',
   'install.blockedIos': 'If nothing pops up: open your phone Settings, tap Notifications, find Flaire and switch Allow Notifications on.',
   'install.blockedAnd': 'If nothing pops up: press and hold the Flaire icon, tap App info, then Notifications, and switch them on.',
@@ -1052,3 +1052,21 @@ export const en: Record<string, string> = {
   'guide.cl6': 'Tap Connect next to Flaire. Sign in with your Flaire email, choose which AI helper this is, and confirm.',
   'guide.stuck': 'Stuck? Tap Ask Flaire at the bottom of the screen and describe what you see.',
 }
+
+import { PAYPAL_ONLY } from '../flags'
+
+/** PayPal-only build shows dollars: "(SAR)" labels become "(USD)" and "SAR 1,000" becomes "$267". AI instructions stay in SAR. */
+function toDollars(text: string): string {
+  return text
+    .replace(/SAR ([\d,]+(?:\.\d+)?)/g, (_m, n: string) => {
+      const usd = Number(n.replace(/,/g, '')) / 3.75
+      return '$' + new Intl.NumberFormat('en-US', { maximumFractionDigits: usd % 1 === 0 ? 0 : 2 }).format(usd)
+    })
+    .replace(/\(SAR\)/g, '(USD)')
+    .replace(/valid SAR amount/g, 'valid amount')
+    .replace(/in SAR/g, 'in USD')
+}
+
+export const en: Record<string, string> = PAYPAL_ONLY
+  ? Object.fromEntries(Object.entries(enBase).map(([k, v]) => [k, k.startsWith('connect.') ? v : toDollars(v)]))
+  : enBase

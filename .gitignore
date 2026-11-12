@@ -7,3 +7,7 @@ __pycache__/
 .pytest_cache/
 app/integrations/shotoku/service/node_modules/
 app/integrations/shotoku/service/data/
+
+*.tsbuildinfo
+node_modules/
+dist/

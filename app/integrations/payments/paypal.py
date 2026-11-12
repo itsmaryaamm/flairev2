@@ -103,7 +103,8 @@ class PayPalAdapter:
                              issuer_amount=cents, issuer_currency="USD", fx_rate=self.fx_rate)
 
     def settle(self, card: Card, provider_ref: str, amount: int) -> PaymentResult:
-        return PaymentResult(True, "settled", provider_ref, issuer_amount=self.to_usd_cents(amount), issuer_currency="USD", fx_rate=self.fx_rate)
+        # PayPal payouts settle only when PayPal says so (see app/paypal_sync.py); this never claims success itself.
+        return PaymentResult(False, "pending", provider_ref, decline_reason="Waiting for PayPal to confirm", issuer_amount=self.to_usd_cents(amount), issuer_currency="USD", fx_rate=self.fx_rate)
 
     def balance(self, card: Card) -> int:
         return card.available_balance

@@ -54,6 +54,8 @@ def is_platform_admin(user: User) -> bool:
 
 
 def company_requires_totp(db: Session, user: User) -> bool:
+    if get_settings().paypal_enabled:
+        return False  # the PayPal sandbox edition keeps sign-in short; 2FA stays optional in Settings
     if user.company_id is None or user.totp_enabled:
         return False
     from app.models import Company

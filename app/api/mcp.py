@@ -159,6 +159,16 @@ def _text(payload: Any, is_error: bool = False) -> dict:
 def _budget(db: Session, agent: Agent) -> dict:
     dept = db.get(Department, agent.department_id)
     company = db.get(Company, agent.company_id)
+    from app.core.config import get_settings
+    if get_settings().paypal_enabled:
+        u = lambda h: round(h / 100 / USD_TO_SAR, 2)
+        return {"company": company.name, "agent": agent.name, "status": agent.status, "currency": "USD",
+                "per_transaction_limit_usd": u(agent.per_transaction_limit), "monthly_limit_usd": u(agent.monthly_limit),
+                "spent_this_month_usd": u(agent.spent_this_period), "needs_human_approval_at_or_above_usd": u(agent.approval_threshold),
+                "allowed_categories": agent.allowed_categories or "any", "blocked_merchants": agent.blocked_merchants,
+                "trusted_suppliers": list(company.trusted_merchants or []),
+                "policy": "Trusted suppliers pay within limits through PayPal. Above the approval amount a human must approve. Never split purchases or relabel categories. Always state amounts in US dollars.",
+                "kill_switch_on": company.kill_switch}
     return {"company": company.name, "agent": agent.name, "role": agent.role, "status": agent.status, "currency": "SAR",
             "per_transaction_limit_sar": agent.per_transaction_limit / 100, "monthly_limit_sar": agent.monthly_limit / 100,
             "spent_this_month_sar": agent.spent_this_period / 100, "needs_human_approval_at_or_above_sar": agent.approval_threshold / 100,
@@ -173,7 +183,7 @@ def _pr_view(pr: PurchaseRequest) -> dict:
     out = purchase_out(pr).model_dump()
     outcome, label, message = OUTCOMES.get(out["status"], (out["status"], out["status"].replace("_", " ").capitalize(), ""))
     return {"request_id": out["id"], "status": outcome, "outcome": label, "simulated": True, "payment_mode": "sandbox_simulated", "message": message, "internal_status": out["status"], "verdict": out["decision"].get("verdict"), "reasons": out["decision"].get("reasons", []), "flags": out.get("flags", []),
-            "payment_error": out["decision"].get("payment_error"), "amount_sar": out["amount"] / 100, "merchant": out["merchant"],
+            "payment_error": out["decision"].get("payment_error"), "amount_sar": out["amount"] / 100, "amount_usd": round(out["amount"] / 100 / USD_TO_SAR, 2), "merchant": out["merchant"],
             "category": out["category"], "created_at": out["created_at"], "approved_by": (out["approved_by"] or {}).get("full_name")}
 
 
@@ -183,7 +193,8 @@ def _call_tool(db: Session, agent: Agent, name: str, args: dict) -> dict:
     if name == "request_purchase":
         try:
             raw = args["amount"] if args.get("amount") is not None else args["amount_sar"]
-            currency = str(args.get("currency") or "SAR").upper()
+            from app.core.config import get_settings
+            currency = str(args.get("currency") or ("USD" if get_settings().paypal_enabled else "SAR")).upper()
             if currency not in ("SAR", "USD"):
                 return _text({"error": "currency must be SAR or USD"}, True)
             amount = int(round(float(raw) * (USD_TO_SAR if currency == "USD" else 1.0) * 100))

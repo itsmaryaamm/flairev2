@@ -199,6 +199,10 @@ def _render(client_name: str, params: dict, error: str = "", email: str = "") ->
 
 
 def _sar(halalas: int) -> str:
+    from app.core.config import get_settings
+    if get_settings().paypal_enabled:
+        u = (halalas or 0) / 100 / 3.75
+        return f"${u:,.0f}" if abs(u - round(u)) < 0.005 else f"${u:,.2f}"
     v = (halalas or 0) / 100
     return f"SAR {v:,.0f}" if v == int(v) else f"SAR {v:,.2f}"
 
@@ -211,14 +215,19 @@ def _render_choose(client_name: str, params: dict, ticket: str, agents: list[Age
         dept = a.department.name if a.department else ""
         opts += (f'<label class="opt"><input type="radio" name="choice" value="{a.id}" required><b>{html.escape(a.name)}</b> <span style="color:#6A6384;font-size:13px">{html.escape(dept)}</span>'
                  f'<span class="m">Up to {_sar(a.monthly_limit)} a month, {_sar(a.per_transaction_limit)} per purchase.<br>A person approves anything from {_sar(a.approval_threshold)}.<br>Spent this month: {_sar(a.spent_this_period)}.</span></label>')
-    opts += ('<label class="opt"><input type="radio" name="choice" value="__new__" required><b>Create a new AI employee</b>'
-             '<span class="m">Sandbox limits: up to SAR 5,000 a month, SAR 1,000 per purchase. A person approves anything from SAR 500. You can change all of this in the dashboard.'
+    from app.core.config import get_settings
+    pp = get_settings().paypal_enabled
+    if pp and agents:
+        opts += ""
+    else:
+      opts += ('<label class="opt"><input type="radio" name="choice" value="__new__" required><b>Create a new AI employee</b>'
+             f'<span class="m">Sandbox limits: up to {_sar(500_000)} a month, {_sar(100_000)} per purchase. A person approves anything from {_sar(50_000)}. You can change all of this in the dashboard.'
              '<br><input type="text" name="new_name" maxlength="60" placeholder="Name, for example Marketing AI" style="margin-top:8px"></span></label>')
     return HTMLResponse(HEAD + f"""<form class="card" method="post">{LOGO}
 <h1>Which AI employee is this {html.escape(client_name)}?</h1>
 <p>It will be able to ask Flaire to authorize purchases within the limits below. It can never approve its own requests or change limits.</p>
 {err}{opts}
-<div class="note"><b>Sandbox.</b> Every purchase is simulated. No real money moves.</div>
+<div class="note"><b>PayPal sandbox.</b> Purchases are paid through PayPal test accounts. No real money moves.</div>
 <input type="hidden" name="stage" value="confirm"><input type="hidden" name="ticket" value="{html.escape(ticket)}">{_hidden(params)}
 <button type="submit">Confirm and connect</button></form></body></html>""")
 
